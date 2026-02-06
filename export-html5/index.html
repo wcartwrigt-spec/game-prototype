@@ -176,6 +176,72 @@
       opacity: 0.7;
       z-index: 4;
     }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 6;
+    }
+    .touch-cluster {
+      position: absolute;
+      bottom: 18px;
+      display: grid;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    .touch-left {
+      left: 18px;
+      grid-template-columns: repeat(2, 64px);
+    }
+    .touch-right {
+      right: 18px;
+      grid-template-columns: repeat(2, 64px);
+    }
+    .touch-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(20, 20, 28, 0.55);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      user-select: none;
+      touch-action: none;
+    }
+    .touch-btn:active {
+      transform: translateY(1px);
+      background: rgba(255, 210, 140, 0.45);
+      color: #2a1f3d;
+    }
+    .touch-mini {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      display: grid;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .touch-mini .touch-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      font-size: 12px;
+    }
+    @media (max-width: 720px) {
+      #hud {
+        top: 8px;
+        gap: 10px;
+        padding: 8px 10px;
+        font-size: 10px;
+      }
+      .hud-block { min-width: 70px; }
+    }
   </style>
 </head>
 <body>
@@ -217,6 +283,19 @@
     <div id="pause"><div class="panel"><h2>Paused</h2><p>Press P to resume.</p></div></div>
     <div id="title"><div class="panel"><h2>MagiWolf Quest</h2><p>Help Magi Alastair collect runes, a key, and a wand to unlock the Magi Tower.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: P.</p><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
     <div id="victory"><div class="panel"><h2>Victory!</h2><p>The tower awakens. Magi Alastair has proven their courage and kindness.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
+    <div id="touch-controls">
+      <div class="touch-cluster touch-left">
+        <div class="touch-btn" data-action="left">LEFT</div>
+        <div class="touch-btn" data-action="right">RIGHT</div>
+      </div>
+      <div class="touch-cluster touch-right">
+        <div class="touch-btn" data-action="jump">JUMP</div>
+        <div class="touch-btn" data-action="interact">E</div>
+      </div>
+      <div class="touch-mini">
+        <div class="touch-btn" data-action="pause">P</div>
+      </div>
+    </div>
     <div id="corner-note">M1 prototype build</div>
   </div>
   <script>
@@ -251,6 +330,7 @@
       continue: document.getElementById("continue-btn"),
       restart: document.getElementById("restart-btn")
     };
+    const touchControls = document.getElementById("touch-controls");
 
     const INPUT = { left: false, right: false, up: false, interact: false };
 
@@ -1170,6 +1250,9 @@
     }
 
     function init() {
+      if (supportsTouch()) {
+        touchControls.style.display = "block";
+      }
       overlays.title.style.display = "grid";
       try {
         overlays.continue.disabled = !localStorage.getItem("magiwolf-save");
@@ -1223,10 +1306,60 @@
         if (KEYMAP[key]) INPUT[KEYMAP[key]] = false;
       });
 
+      setupTouchControls();
+
       requestAnimationFrame(tick);
     }
 
     init();
+
+    function supportsTouch() {
+      return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    }
+
+    function setupTouchControls() {
+      if (!touchControls) return;
+      const buttons = touchControls.querySelectorAll(".touch-btn");
+      const setInput = (action, isDown) => {
+        if (action === "left" || action === "right") {
+          INPUT[action] = isDown;
+          return;
+        }
+        if (action === "jump" && isDown && game.player) {
+          game.player.jumpBuffer = 0.12;
+          return;
+        }
+        if (action === "interact" && isDown) {
+          if (game.dialogActive) {
+            nextDialog();
+          } else if (!game.quizActive && game.scene !== "Title") {
+            handleInteraction();
+          }
+          return;
+        }
+        if (action === "pause" && isDown) {
+          game.paused = !game.paused;
+          overlays.pause.style.display = game.paused ? "grid" : "none";
+        }
+      };
+      buttons.forEach(button => {
+        const action = button.dataset.action;
+        const onDown = (event) => {
+          event.preventDefault();
+          setInput(action, true);
+        };
+        const onUp = (event) => {
+          event.preventDefault();
+          setInput(action, false);
+        };
+        button.addEventListener("pointerdown", onDown);
+        button.addEventListener("pointerup", onUp);
+        button.addEventListener("pointercancel", onUp);
+        button.addEventListener("pointerleave", onUp);
+        button.addEventListener("touchstart", onDown, { passive: false });
+        button.addEventListener("touchend", onUp, { passive: false });
+      });
+    }
   </script>
 </body>
 </html>
