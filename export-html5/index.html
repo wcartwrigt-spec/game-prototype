@@ -183,7 +183,7 @@
       inset: 0;
       pointer-events: none;
       display: none;
-      z-index: 6;
+      z-index: 12;
       padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     .touch-cluster {
@@ -200,6 +200,7 @@
     .touch-right {
       right: calc(18px + env(safe-area-inset-right));
       grid-template-columns: repeat(2, 64px);
+      bottom: calc(56px + env(safe-area-inset-bottom));
     }
     .touch-btn {
       width: clamp(56px, 10vw, 72px);
@@ -1354,6 +1355,13 @@
       document.addEventListener("keyup", (event) => {
         const key = event.key;
         if (KEYMAP[key]) INPUT[KEYMAP[key]] = false;
+      });
+
+      overlays.dialog.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        if (game.dialogActive) {
+          nextDialog();
+        }
       });
 
       setupTouchControls();
