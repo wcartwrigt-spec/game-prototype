@@ -1,4 +1,4 @@
-<!doctype html>
+ï»¿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -434,7 +434,7 @@
       const petEl = document.createElement("div");
       petEl.className = "icon pet";
       petEl.style.opacity = game.pet ? "1" : "0.25";
-      petEl.textContent = game.pet ? "??" : "–";
+      petEl.textContent = game.pet ? "??" : "-";
       hud.pet.appendChild(petEl);
     }
 
@@ -584,7 +584,7 @@
         };
       }
       if (id === "water") {
-        const a = 5 + Math.floor(Math.random() * 10);
+        const a = 5 + Math.floor(Math.random() * 6);
         const b = 1 + Math.floor(Math.random() * 10);
         const op = Math.random() > 0.5 ? "+" : "-";
         const answer = op === "+" ? a + b : a - b;
@@ -600,7 +600,7 @@
       const answer = a * b;
       const choices = shuffle([answer, answer + b, answer - 2, answer + 4]);
       return {
-        question: `Tower gate: ${a} × ${b} = ?`,
+        question: `Tower gate: ${a} x ${b} = ?`,
         choices: choices.map(n => `${n}`),
         answer: choices.indexOf(answer)
       };
@@ -1020,3 +1020,4 @@
   </script>
 </body>
 </html>
+
