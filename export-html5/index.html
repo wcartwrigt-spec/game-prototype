@@ -1278,7 +1278,7 @@
     }
 
     function init() {
-      if (supportsTouch()) {
+      if (shouldEnableTouchControls()) {
         touchControls.style.display = "block";
       }
       overlays.title.style.display = "grid";
@@ -1343,6 +1343,12 @@
 
     function supportsTouch() {
       return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || window.matchMedia("(pointer: coarse)").matches;
+    }
+
+    function shouldEnableTouchControls() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("touch") === "1") return true;
+      return supportsTouch();
     }
 
     function setupTouchControls() {
