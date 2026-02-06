@@ -778,7 +778,7 @@
       const cam = game.camera;
       drawDecor(scene);
 
-      scene.platforms.forEach(platform => drawPlatform(platform, cam));
+      (scene.platforms || []).forEach(platform => drawPlatform(platform, cam));
 
       scene.gates && scene.gates.forEach(gate => {
         if (game.gateStates[gate.id]) {
