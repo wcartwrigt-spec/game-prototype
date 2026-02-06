@@ -257,6 +257,12 @@
       transform: translate(0, 0);
     }
     @media (max-width: 720px) {
+      canvas {
+        width: 100vw;
+        height: auto;
+        max-height: 100vh;
+        border-radius: 0;
+      }
       #hud {
         top: 8px;
         gap: 10px;
@@ -264,6 +270,10 @@
         font-size: 10px;
       }
       .hud-block { min-width: 70px; }
+      .choice {
+        font-size: 16px;
+        padding: 16px 14px;
+      }
     }
   </style>
 </head>
@@ -571,6 +581,17 @@
       overlays.dialog.style.display = "grid";
     }
 
+    function quickDialog(title, body, durationMs) {
+      showDialog(title, body);
+      const delay = durationMs || 900;
+      window.setTimeout(() => {
+        if (!game.dialogActive) return;
+        if (overlays.dialogTitle.textContent !== title) return;
+        game.dialogActive = false;
+        overlays.dialog.style.display = "none";
+      }, delay);
+    }
+
     function nextDialog() {
       if (game.dialogQueue.length === 0) {
         game.dialogActive = false;
@@ -809,7 +830,7 @@
         if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
           rune.collected = true;
           game.inventory.runes += 1;
-          queueDialog("Rune Collected", "A magic rune joins your pack.");
+          quickDialog("Rune Collected", "A magic rune joins your pack.");
           saveGame();
         }
       });
@@ -817,14 +838,14 @@
       if (scene.keyItem && !scene.keyItem.collected && rectsOverlap(player, { x: scene.keyItem.x, y: scene.keyItem.y, w: 26, h: 26 })) {
         scene.keyItem.collected = true;
         game.inventory.key = true;
-        queueDialog("Golden Key", "You found the Golden Key.");
+        quickDialog("Golden Key", "You found the Golden Key.");
         saveGame();
       }
 
       if (scene.wandItem && !scene.wandItem.collected && rectsOverlap(player, { x: scene.wandItem.x, y: scene.wandItem.y, w: 26, h: 26 })) {
         scene.wandItem.collected = true;
         game.inventory.wand = true;
-        queueDialog("Tower Wand", "The wand hums with energy.");
+        quickDialog("Tower Wand", "The wand hums with energy.");
         saveGame();
       }
 
