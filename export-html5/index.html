@@ -25,6 +25,7 @@
       font-family: "Trebuchet MS", "Segoe UI", sans-serif;
       color: #fff;
       overflow: hidden;
+      height: 100vh;
     }
     #game-wrap {
       position: relative;
@@ -187,17 +188,17 @@
     }
     .touch-cluster {
       position: absolute;
-      bottom: 18px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
       display: grid;
       gap: 12px;
       pointer-events: auto;
     }
     .touch-left {
-      left: 18px;
+      left: calc(18px + env(safe-area-inset-left));
       grid-template-columns: repeat(2, 64px);
     }
     .touch-right {
-      right: 18px;
+      right: calc(18px + env(safe-area-inset-right));
       grid-template-columns: repeat(2, 64px);
     }
     .touch-btn {
@@ -223,8 +224,8 @@
     }
     .touch-mini {
       position: absolute;
-      top: 16px;
-      right: 18px;
+      top: calc(16px + env(safe-area-inset-top));
+      right: calc(18px + env(safe-area-inset-right));
       display: grid;
       gap: 8px;
       pointer-events: auto;
@@ -259,7 +260,7 @@
     @media (max-width: 720px) {
       canvas {
         width: 100vw;
-        height: auto;
+        height: 100vh;
         max-height: 100vh;
         border-radius: 0;
       }
