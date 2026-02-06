@@ -69,6 +69,10 @@
       font-size: 11px;
       color: #d8e7ff;
     }
+    .hud-value {
+      font-size: 11px;
+      color: #ffffff;
+    }
     .icon-row {
       display: flex;
       gap: 6px;
@@ -185,22 +189,27 @@
       <div class="hud-block">
         <div class="hud-title">Hearts</div>
         <div class="icon-row" id="hearts"></div>
+        <div class="hud-value" id="hearts-value"></div>
       </div>
       <div class="hud-block">
         <div class="hud-title">Runes</div>
         <div class="icon-row" id="runes"></div>
+        <div class="hud-value" id="runes-value"></div>
       </div>
       <div class="hud-block">
         <div class="hud-title">Key</div>
         <div class="icon-row" id="key"></div>
+        <div class="hud-value" id="key-value"></div>
       </div>
       <div class="hud-block">
         <div class="hud-title">Wand</div>
         <div class="icon-row" id="wand"></div>
+        <div class="hud-value" id="wand-value"></div>
       </div>
       <div class="hud-block">
         <div class="hud-title">Pet</div>
         <div class="icon-row" id="pet"></div>
+        <div class="hud-value" id="pet-value"></div>
       </div>
     </div>
     <div id="dialog"><div class="panel"><h2 id="dialog-title"></h2><p id="dialog-body"></p><p><strong>Press E</strong> to continue.</p></div></div>
@@ -220,7 +229,12 @@
       runes: document.getElementById("runes"),
       key: document.getElementById("key"),
       wand: document.getElementById("wand"),
-      pet: document.getElementById("pet")
+      pet: document.getElementById("pet"),
+      heartsValue: document.getElementById("hearts-value"),
+      runesValue: document.getElementById("runes-value"),
+      keyValue: document.getElementById("key-value"),
+      wandValue: document.getElementById("wand-value"),
+      petValue: document.getElementById("pet-value")
     };
 
     const overlays = {
@@ -402,40 +416,45 @@
     }
 
     function setHUD() {
-      hud.scene.textContent = game.scene;
+      hud.scene.textContent = game.scene || "?";
       hud.hearts.innerHTML = "";
       for (let i = 0; i < game.hearts; i += 1) {
         const el = document.createElement("div");
         el.className = "icon heart";
-        el.textContent = "?";
+        el.textContent = "H";
         hud.hearts.appendChild(el);
       }
+      hud.heartsValue.textContent = `${game.hearts}/3`;
       hud.runes.innerHTML = "";
       for (let i = 0; i < 3; i += 1) {
         const el = document.createElement("div");
         el.className = "icon rune";
         el.style.opacity = i < game.inventory.runes ? "1" : "0.25";
-        el.textContent = "?";
+        el.textContent = "*";
         hud.runes.appendChild(el);
       }
+      hud.runesValue.textContent = `${game.inventory.runes}/3`;
       hud.key.innerHTML = "";
       const keyEl = document.createElement("div");
       keyEl.className = "icon key";
       keyEl.style.opacity = game.inventory.key ? "1" : "0.25";
-      keyEl.textContent = "??";
+      keyEl.textContent = "K";
       hud.key.appendChild(keyEl);
+      hud.keyValue.textContent = game.inventory.key ? "Yes" : "No";
       hud.wand.innerHTML = "";
       const wandEl = document.createElement("div");
       wandEl.className = "icon wand";
       wandEl.style.opacity = game.inventory.wand ? "1" : "0.25";
-      wandEl.textContent = "?";
+      wandEl.textContent = "W";
       hud.wand.appendChild(wandEl);
+      hud.wandValue.textContent = game.inventory.wand ? "Yes" : "No";
       hud.pet.innerHTML = "";
       const petEl = document.createElement("div");
       petEl.className = "icon pet";
       petEl.style.opacity = game.pet ? "1" : "0.25";
-      petEl.textContent = game.pet ? "??" : "-";
+      petEl.textContent = game.pet ? "P" : "-";
       hud.pet.appendChild(petEl);
+      hud.petValue.textContent = game.pet ? PETS[game.pet].name : "None";
     }
 
     function showDialog(title, body) {
@@ -711,12 +730,6 @@
         queueDialog("Pine Pup", "Press E to befriend the Pine Pup.");
       }
 
-      if (scene.gates && !game.quizActive && !game.dialogActive) {
-        scene.gates.forEach(gate => {
-          if (rectsOverlap(player, gate)) handleGate(scene, gate);
-        });
-      }
-
       scene.exits && scene.exits.forEach(exit => {
         if (rectsOverlap(player, exit)) {
           enterScene(exit.target, exit.spawn);
@@ -941,11 +954,21 @@
       ctx.restore();
     }
 
+    function getInteractRect(player) {
+      return {
+        x: player.x - 8,
+        y: player.y - 8,
+        w: player.w + 16,
+        h: player.h + 16
+      };
+    }
+
     function handleInteraction() {
       const scene = getScene();
       const player = game.player;
+      const interact = getInteractRect(player);
 
-      if (scene.petSpot && !game.pet && rectsOverlap(player, scene.petSpot)) {
+      if (scene.petSpot && !game.pet && rectsOverlap(interact, scene.petSpot)) {
         game.pet = "pinePup";
         queueDialog("Pine Pup", "The Pine Pup joins you, giving extra jump grace.");
         saveGame();
@@ -954,13 +977,13 @@
 
       if (scene.gates) {
         scene.gates.forEach(gate => {
-          if (rectsOverlap(player, gate)) handleGate(scene, gate);
+          if (rectsOverlap(interact, gate)) handleGate(scene, gate);
         });
       }
 
       if (scene.dialogs) {
         scene.dialogs.forEach(dialog => {
-          if (rectsOverlap(player, dialog)) {
+          if (rectsOverlap(interact, dialog)) {
             queueDialog(dialog.title, dialog.text);
           }
         });
