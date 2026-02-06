@@ -185,10 +185,11 @@
       display: none;
       z-index: 12;
       padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      --touch-raise: 48px;
     }
     .touch-cluster {
       position: absolute;
-      bottom: calc(18px + env(safe-area-inset-bottom));
+      bottom: calc(18px + env(safe-area-inset-bottom) + var(--touch-raise));
       display: grid;
       gap: 12px;
       pointer-events: auto;
@@ -200,7 +201,7 @@
     .touch-right {
       right: calc(18px + env(safe-area-inset-right));
       grid-template-columns: repeat(2, 64px);
-      bottom: calc(56px + env(safe-area-inset-bottom));
+      bottom: calc(56px + env(safe-area-inset-bottom) + var(--touch-raise));
     }
     .touch-btn {
       width: clamp(56px, 10vw, 72px);
@@ -1360,6 +1361,17 @@
       overlays.dialog.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         if (game.dialogActive) {
+          nextDialog();
+        }
+      });
+      overlays.dialog.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        if (game.dialogActive) {
+          nextDialog();
+        }
+      }, { passive: false });
+      document.addEventListener("pointerdown", (event) => {
+        if (game.dialogActive && !game.quizActive) {
           nextDialog();
         }
       });
