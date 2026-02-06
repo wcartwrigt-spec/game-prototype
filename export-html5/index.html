@@ -40,6 +40,7 @@
       box-shadow: 0 24px 60px rgba(20, 22, 36, 0.45);
       background: #11141f;
       image-rendering: crisp-edges;
+      touch-action: none;
     }
     #hud {
       position: absolute;
@@ -182,6 +183,7 @@
       pointer-events: none;
       display: none;
       z-index: 6;
+      padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     .touch-cluster {
       position: absolute;
@@ -199,14 +201,14 @@
       grid-template-columns: repeat(2, 64px);
     }
     .touch-btn {
-      width: 64px;
-      height: 64px;
+      width: clamp(56px, 10vw, 72px);
+      height: clamp(56px, 10vw, 72px);
       border-radius: 18px;
       border: 2px solid rgba(255, 255, 255, 0.3);
       background: rgba(20, 20, 28, 0.55);
       color: #fff;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       letter-spacing: 1px;
       display: grid;
       place-items: center;
@@ -232,6 +234,27 @@
       height: 52px;
       border-radius: 14px;
       font-size: 12px;
+    }
+    .joystick {
+      width: clamp(110px, 22vw, 160px);
+      height: clamp(110px, 22vw, 160px);
+      border-radius: 50%;
+      background: rgba(20, 20, 28, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      display: grid;
+      place-items: center;
+      touch-action: none;
+      position: relative;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    .joystick-knob {
+      width: clamp(44px, 9vw, 64px);
+      height: clamp(44px, 9vw, 64px);
+      border-radius: 50%;
+      background: rgba(255, 210, 140, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.2);
+      transform: translate(0, 0);
     }
     @media (max-width: 720px) {
       #hud {
@@ -285,8 +308,9 @@
     <div id="victory"><div class="panel"><h2>Victory!</h2><p>The tower awakens. Magi Alastair has proven their courage and kindness.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
     <div id="touch-controls">
       <div class="touch-cluster touch-left">
-        <div class="touch-btn" data-action="left">LEFT</div>
-        <div class="touch-btn" data-action="right">RIGHT</div>
+        <div class="joystick" id="joystick">
+          <div class="joystick-knob" id="joystick-knob"></div>
+        </div>
       </div>
       <div class="touch-cluster touch-right">
         <div class="touch-btn" data-action="jump">JUMP</div>
@@ -331,6 +355,8 @@
       restart: document.getElementById("restart-btn")
     };
     const touchControls = document.getElementById("touch-controls");
+    const joystick = document.getElementById("joystick");
+    const joystickKnob = document.getElementById("joystick-knob");
 
     const INPUT = { left: false, right: false, up: false, interact: false };
 
@@ -352,7 +378,8 @@
       paused: false,
       camera: { x: 0, y: 0 },
       lastCheckpoint: null,
-      lastTick: 0
+      lastTick: 0,
+      touchAxisX: 0
     };
 
     const PETS = {
@@ -745,9 +772,10 @@
       player.coyote = player.onGround ? graceBase : Math.max(0, player.coyote - dt);
       player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
 
-      if (INPUT.left) player.vx = clamp(player.vx - player.speed * dt * 4, -player.speed, player.speed);
-      if (INPUT.right) player.vx = clamp(player.vx + player.speed * dt * 4, -player.speed, player.speed);
-      if (!INPUT.left && !INPUT.right) player.vx *= 0.85;
+      const axis = game.touchAxisX !== 0 ? game.touchAxisX : (INPUT.right ? 1 : 0) + (INPUT.left ? -1 : 0);
+      if (axis < -0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
+      if (axis > 0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
+      if (Math.abs(axis) <= 0.05) player.vx *= 0.85;
 
       if (player.jumpBuffer > 0 && player.coyote > 0) {
         player.vy = -player.jumpPower;
@@ -1314,17 +1342,14 @@
     init();
 
     function supportsTouch() {
-      return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+      return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || window.matchMedia("(pointer: coarse)").matches;
     }
 
     function setupTouchControls() {
       if (!touchControls) return;
       const buttons = touchControls.querySelectorAll(".touch-btn");
+      const activeButtons = new Map();
       const setInput = (action, isDown) => {
-        if (action === "left" || action === "right") {
-          INPUT[action] = isDown;
-          return;
-        }
         if (action === "jump" && isDown && game.player) {
           game.player.jumpBuffer = 0.12;
           return;
@@ -1346,10 +1371,12 @@
         const action = button.dataset.action;
         const onDown = (event) => {
           event.preventDefault();
+          activeButtons.set(event.pointerId || action, action);
           setInput(action, true);
         };
         const onUp = (event) => {
           event.preventDefault();
+          activeButtons.delete(event.pointerId || action);
           setInput(action, false);
         };
         button.addEventListener("pointerdown", onDown);
@@ -1358,6 +1385,53 @@
         button.addEventListener("pointerleave", onUp);
         button.addEventListener("touchstart", onDown, { passive: false });
         button.addEventListener("touchend", onUp, { passive: false });
+      });
+
+      setupJoystick();
+    }
+
+    function setupJoystick() {
+      if (!joystick || !joystickKnob) return;
+      let activeId = null;
+      const maxRadius = () => joystick.clientWidth * 0.35;
+      const centerFromEvent = (event) => {
+        const rect = joystick.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, rect };
+      };
+      const updateStick = (clientX, clientY) => {
+        const { x, y, rect } = centerFromEvent();
+        const dx = clientX - x;
+        const dy = clientY - y;
+        const radius = maxRadius();
+        const dist = Math.hypot(dx, dy);
+        const ratio = dist > radius ? radius / dist : 1;
+        const stickX = dx * ratio;
+        const stickY = dy * ratio;
+        joystickKnob.style.transform = `translate(${stickX}px, ${stickY}px)`;
+        const axis = clamp(stickX / radius, -1, 1);
+        game.touchAxisX = axis;
+      };
+      const resetStick = () => {
+        activeId = null;
+        joystickKnob.style.transform = "translate(0, 0)";
+        game.touchAxisX = 0;
+      };
+      joystick.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        activeId = event.pointerId;
+        updateStick(event.clientX, event.clientY);
+      });
+      window.addEventListener("pointermove", (event) => {
+        if (activeId === null || event.pointerId !== activeId) return;
+        updateStick(event.clientX, event.clientY);
+      });
+      window.addEventListener("pointerup", (event) => {
+        if (event.pointerId !== activeId) return;
+        resetStick();
+      });
+      window.addEventListener("pointercancel", (event) => {
+        if (event.pointerId !== activeId) return;
+        resetStick();
       });
     }
   </script>
