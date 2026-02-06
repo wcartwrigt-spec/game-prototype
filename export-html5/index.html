@@ -791,14 +791,8 @@
       const scene = getScene();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, scene.background ? scene.background.top : "#000");
-      bg.addColorStop(1, scene.background ? scene.background.bottom : "#000");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       const cam = game.camera;
-      drawDecor(scene);
+      drawBackdrop(scene, cam);
 
       (scene.platforms || []).forEach(platform => drawPlatform(platform, cam));
 
@@ -823,29 +817,184 @@
       scene.hazards && scene.hazards.forEach(hazard => drawHazard(hazard, cam));
 
       if (game.player) {
-        drawPlayer(game.player, cam);
+      drawPlayer(game.player, cam);
+    }
+
+    function drawBackdrop(scene, cam) {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      const top = scene.background ? scene.background.top : "#2a1f3d";
+      const bottom = scene.background ? scene.background.bottom : "#7b4d3b";
+      bg.addColorStop(0, top);
+      bg.addColorStop(1, bottom);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawSunsetGlow();
+      drawFarMountains(cam);
+      drawMidHills(cam);
+      drawClouds(cam);
+
+      if (scene.name === "Forest Trail") {
+        drawForestSilhouette(cam);
       }
+      if (scene.name === "Water Park") {
+        drawWaterShimmer(cam);
+      }
+      if (scene.name === "Magi Tower") {
+        drawTowerAura(cam);
+      }
+      if (scene.name === "Lodge Lobby") {
+        drawLodgeBanner(cam);
+      }
+    }
+
+    function drawSunsetGlow() {
+      ctx.save();
+      const glow = ctx.createRadialGradient(180, 120, 30, 180, 120, 260);
+      glow.addColorStop(0, "rgba(255, 210, 140, 0.7)");
+      glow.addColorStop(1, "rgba(255, 170, 120, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    function drawFarMountains(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.2, 0);
+      ctx.fillStyle = "rgba(58, 52, 92, 0.6)";
+      ctx.beginPath();
+      ctx.moveTo(-100, 420);
+      ctx.lineTo(120, 280);
+      ctx.lineTo(320, 420);
+      ctx.lineTo(520, 300);
+      ctx.lineTo(740, 430);
+      ctx.lineTo(980, 290);
+      ctx.lineTo(1200, 430);
+      ctx.lineTo(1400, 320);
+      ctx.lineTo(1700, 430);
+      ctx.lineTo(1900, 360);
+      ctx.lineTo(2100, 460);
+      ctx.lineTo(2100, 620);
+      ctx.lineTo(-100, 620);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMidHills(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.35, 0);
+      ctx.fillStyle = "rgba(70, 88, 96, 0.55)";
+      ctx.beginPath();
+      ctx.moveTo(-120, 500);
+      ctx.quadraticCurveTo(200, 420, 420, 500);
+      ctx.quadraticCurveTo(700, 400, 980, 500);
+      ctx.quadraticCurveTo(1300, 430, 1600, 500);
+      ctx.lineTo(2000, 620);
+      ctx.lineTo(-120, 620);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawClouds(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.15, 0);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      for (let i = 0; i < 5; i += 1) {
+        const baseX = 80 + i * 220;
+        const baseY = 90 + i * 12;
+        ctx.beginPath();
+        ctx.ellipse(baseX, baseY, 55, 20, 0, 0, Math.PI * 2);
+        ctx.ellipse(baseX + 40, baseY + 6, 45, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(baseX - 40, baseY + 8, 40, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawForestSilhouette(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.4, 0);
+      ctx.fillStyle = "rgba(24, 52, 40, 0.55)";
+      for (let i = 0; i < 12; i += 1) {
+        const x = i * 140;
+        ctx.beginPath();
+        ctx.moveTo(x + 10, 520);
+        ctx.lineTo(x + 50, 420);
+        ctx.lineTo(x + 90, 520);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawWaterShimmer(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.45, 0);
+      ctx.strokeStyle = "rgba(180, 220, 255, 0.4)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(i * 160, 500 + (i % 2) * 6);
+        ctx.lineTo(i * 160 + 90, 500 + (i % 2) * 6);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawTowerAura(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.3, 0);
+      const glow = ctx.createRadialGradient(900, 260, 20, 900, 260, 180);
+      glow.addColorStop(0, "rgba(210, 170, 255, 0.45)");
+      glow.addColorStop(1, "rgba(210, 170, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(700, 120, 400, 320);
+      ctx.restore();
+    }
+
+    function drawLodgeBanner(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.25, 0);
+      ctx.fillStyle = "rgba(180, 90, 60, 0.5)";
+      ctx.fillRect(260, 200, 220, 50);
+      ctx.fillStyle = "rgba(250, 220, 160, 0.7)";
+      ctx.font = "16px Trebuchet MS";
+      ctx.fillText("Lodge of Runes", 280, 232);
+      ctx.restore();
+    }
     }
     function drawPlatform(platform, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
       if (platform.type === "ground") {
-        ctx.fillStyle = "#3a5f46";
+        const g = ctx.createLinearGradient(0, platform.y, 0, platform.y + platform.h);
+        g.addColorStop(0, "#4f6a44");
+        g.addColorStop(1, "#2f4b34");
+        ctx.fillStyle = g;
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.fillStyle = "#2b4033";
+        ctx.fillStyle = "rgba(27, 46, 30, 0.7)";
         for (let i = 0; i < platform.w; i += 40) {
           ctx.fillRect(platform.x + i, platform.y, 20, 10);
         }
       } else if (platform.type === "wood") {
-        ctx.fillStyle = "#9a5a2d";
+        ctx.fillStyle = "#a56634";
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.strokeStyle = "#6f3d1d";
+        ctx.strokeStyle = "#6a3b1d";
         ctx.lineWidth = 3;
         ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
+        ctx.strokeStyle = "rgba(255, 222, 180, 0.3)";
+        for (let x = platform.x + 10; x < platform.x + platform.w; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, platform.y + 4);
+          ctx.lineTo(x + 20, platform.y + platform.h - 4);
+          ctx.stroke();
+        }
       } else {
-        ctx.fillStyle = "#7d8795";
+        ctx.fillStyle = "#808999";
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.strokeStyle = "#4e5663";
+        ctx.strokeStyle = "#4a4f5d";
         ctx.lineWidth = 2;
         ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
       }
@@ -855,25 +1004,32 @@
     function drawGate(gate, cam, open) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = open ? "rgba(255,255,255,0.15)" : "#422a5f";
+      ctx.fillStyle = open ? "rgba(255,255,255,0.15)" : "#4d2b64";
       ctx.fillRect(gate.x, gate.y, gate.w, gate.h);
-      ctx.strokeStyle = open ? "#9ad0ff" : "#f0c95f";
+      ctx.strokeStyle = open ? "#9ad0ff" : "#f1d07a";
       ctx.lineWidth = 3;
       ctx.strokeRect(gate.x, gate.y, gate.w, gate.h);
       ctx.fillStyle = "#fff";
       ctx.font = "12px Trebuchet MS";
       ctx.fillText(gate.label, gate.x - 10, gate.y - 8);
+      ctx.fillStyle = open ? "rgba(255,255,255,0.2)" : "rgba(255,220,140,0.5)";
+      ctx.beginPath();
+      ctx.arc(gate.x + gate.w / 2, gate.y + 22, 8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
     function drawRune(rune, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#7aa8ff";
+      const glow = ctx.createRadialGradient(rune.x + 12, rune.y + 12, 4, rune.x + 12, rune.y + 12, 18);
+      glow.addColorStop(0, "rgba(210, 230, 255, 0.9)");
+      glow.addColorStop(1, "rgba(122, 168, 255, 0.2)");
+      ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(rune.x + 12, rune.y + 12, 12, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#eaf3ff";
+      ctx.fillStyle = "#f0f7ff";
       ctx.fillRect(rune.x + 9, rune.y + 6, 6, 12);
       ctx.restore();
     }
@@ -881,9 +1037,11 @@
     function drawKey(key, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#f5c542";
+      ctx.fillStyle = "#f4c04b";
       ctx.fillRect(key.x, key.y, 24, 10);
       ctx.fillRect(key.x + 8, key.y - 8, 8, 8);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.fillRect(key.x + 4, key.y + 2, 8, 2);
       ctx.restore();
     }
 
@@ -896,7 +1054,7 @@
       ctx.moveTo(wand.x, wand.y + 20);
       ctx.lineTo(wand.x + 20, wand.y);
       ctx.stroke();
-      ctx.fillStyle = "#fff4a8";
+      ctx.fillStyle = "#fff0b8";
       ctx.beginPath();
       ctx.arc(wand.x + 22, wand.y - 2, 6, 0, Math.PI * 2);
       ctx.fill();
@@ -923,6 +1081,8 @@
       ctx.fillStyle = "#1a3b2f";
       ctx.fillRect(spot.x + 20, spot.y + 26, 6, 6);
       ctx.fillRect(spot.x + 34, spot.y + 26, 6, 6);
+      ctx.fillStyle = "#f8f1d0";
+      ctx.fillRect(spot.x + 26, spot.y + 38, 8, 4);
       ctx.restore();
     }
 
@@ -931,30 +1091,32 @@
       ctx.translate(-cam.x, -cam.y);
       ctx.fillStyle = "#ff6b6b";
       ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fillRect(hazard.x + 6, hazard.y + 4, hazard.w - 12, 3);
       ctx.restore();
     }
 
     function drawPlayer(player, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#2c2a40";
+      ctx.fillRect(player.x + 6, player.y + 18, player.w - 12, player.h - 18);
+      ctx.fillStyle = "#6a3b1d";
+      ctx.fillRect(player.x + 4, player.y + 26, player.w - 8, player.h - 26);
       ctx.fillStyle = "#3b2f5c";
-      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.beginPath();
+      ctx.moveTo(player.x, player.y + 24);
+      ctx.lineTo(player.x + player.w / 2, player.y + player.h);
+      ctx.lineTo(player.x + player.w, player.y + 24);
+      ctx.closePath();
+      ctx.fill();
       ctx.fillStyle = "#f4d3b3";
-      ctx.fillRect(player.x + 6, player.y + 6, player.w - 12, 16);
+      ctx.fillRect(player.x + 8, player.y + 6, player.w - 16, 16);
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(player.x + 10, player.y + 12, 5, 5);
-      ctx.fillRect(player.x + 20, player.y + 12, 5, 5);
-      ctx.restore();
-    }
-
-    function drawDecor(scene) {
-      ctx.save();
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
-      for (let i = 0; i < 5; i += 1) {
-        ctx.beginPath();
-        ctx.arc(100 + i * 180, 120 + i * 10, 40, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.fillRect(player.x + 12, player.y + 12, 4, 4);
+      ctx.fillRect(player.x + 20, player.y + 12, 4, 4);
+      ctx.fillStyle = "#f5c542";
+      ctx.fillRect(player.x + player.w - 6, player.y + 18, 3, 20);
       ctx.restore();
     }
 
