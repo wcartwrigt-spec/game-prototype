@@ -418,6 +418,7 @@
           { x: 560, y: 360, w: 200, h: 22, type: "wood" },
           { x: 880, y: 310, w: 160, h: 22, type: "wood" }
         ],
+        petSpot: { x: 520, y: 330, w: 60, h: 60, prompted: false },
         runes: [
           { x: 330, y: 380, collected: false },
           { x: 640, y: 320, collected: false },
@@ -427,7 +428,8 @@
           { id: "lobby", x: 1400, y: 350, w: 90, h: 150, label: "Rune Gate" }
         ],
         dialogs: [
-          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask a quick addition question." }
+          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask a quick addition question." },
+          { x: 460, y: 360, w: 80, h: 80, title: "Pine Pup", text: "A Pine Pup is waiting on the balcony. Press E to befriend it." }
         ],
         exits: [
           { x: 1500, y: 350, w: 80, h: 150, target: "Water Park", spawn: { x: 60, y: 420 } }
@@ -481,9 +483,8 @@
         enemies: [
           { x: 420, y: 468, w: 34, h: 34, vx: 45, minX: 320, maxX: 620 }
         ],
-        petSpot: { x: 680, y: 310, w: 60, h: 60, prompted: false },
         dialogs: [
-          { x: 120, y: 440, w: 90, h: 60, title: "Forest Spirit", text: "A Pine Pup waits ahead. Press E to befriend it." }
+          { x: 120, y: 440, w: 90, h: 60, title: "Forest Spirit", text: "The trail is calmer with Pine Pup at your side." }
         ],
         exits: [
           { x: 1700, y: 350, w: 80, h: 150, target: "Magi Tower", spawn: { x: 60, y: 420 } }
@@ -701,8 +702,8 @@
       SCENES["Lodge Lobby"].runes.forEach(r => r.collected = false);
       SCENES["Water Park"].keyItem.collected = false;
       SCENES["Magi Tower"].wandItem.collected = false;
-      if (SCENES["Forest Trail"].petSpot) {
-        SCENES["Forest Trail"].petSpot.prompted = false;
+      if (SCENES["Lodge Lobby"].petSpot) {
+        SCENES["Lodge Lobby"].petSpot.prompted = false;
       }
       enterScene("Lodge Lobby", { x: 100, y: 400 });
     }
