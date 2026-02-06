@@ -531,7 +531,6 @@
     }
 
     function resetGame() {
-      game.scene = "Lodge Lobby";
       game.inventory = { runes: 0, key: false, wand: false };
       game.hearts = 3;
       game.pet = null;
@@ -540,7 +539,7 @@
       SCENES["Lodge Lobby"].runes.forEach(r => r.collected = false);
       SCENES["Water Park"].keyItem.collected = false;
       SCENES["Magi Tower"].wandItem.collected = false;
-      game.player = createPlayer({ x: 100, y: 400 });
+      enterScene("Lodge Lobby", { x: 100, y: 400 });
     }
 
     function respawn() {
@@ -710,6 +709,12 @@
 
       if (scene.petSpot && !game.pet && rectsOverlap(player, scene.petSpot)) {
         queueDialog("Pine Pup", "Press E to befriend the Pine Pup.");
+      }
+
+      if (scene.gates && !game.quizActive && !game.dialogActive) {
+        scene.gates.forEach(gate => {
+          if (rectsOverlap(player, gate)) handleGate(scene, gate);
+        });
       }
 
       scene.exits && scene.exits.forEach(exit => {
