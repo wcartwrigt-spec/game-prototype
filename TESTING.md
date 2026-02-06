@@ -9,6 +9,7 @@
 1. Open the repo folder in Files.
 2. Navigate to `export-html5/index.html` and open it in Chrome.
 3. Verify the page loads and the title reads "MagiWolf Quest".
+4. If clicking "New Adventure" does nothing, use the fallback local server below (file:// can block localStorage).
 
 ## Chrome autoplay notes
 - This build has no audio, so autoplay prompts should not appear.

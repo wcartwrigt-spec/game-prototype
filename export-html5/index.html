@@ -497,11 +497,20 @@
           towerWand: SCENES["Magi Tower"].wandItem.collected
         }
       };
-      localStorage.setItem("magiwolf-save", JSON.stringify(payload));
+      try {
+        localStorage.setItem("magiwolf-save", JSON.stringify(payload));
+      } catch (error) {
+        // Ignore storage failures (e.g., file:// restrictions).
+      }
     }
 
     function loadGame() {
-      const raw = localStorage.getItem("magiwolf-save");
+      let raw = null;
+      try {
+        raw = localStorage.getItem("magiwolf-save");
+      } catch (error) {
+        raw = null;
+      }
       if (!raw) return false;
       const data = JSON.parse(raw);
       game.scene = data.scene;
@@ -965,7 +974,11 @@
 
     function init() {
       overlays.title.style.display = "grid";
-      overlays.continue.disabled = !localStorage.getItem("magiwolf-save");
+      try {
+        overlays.continue.disabled = !localStorage.getItem("magiwolf-save");
+      } catch (error) {
+        overlays.continue.disabled = true;
+      }
       overlays.start.addEventListener("click", () => {
         overlays.title.style.display = "none";
         resetGame();
