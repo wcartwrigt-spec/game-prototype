@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagiWolf Quest</title>
+  <style>
+    :root {
+      --sky: #8cc9ff;
+      --ink: #1c1a23;
+      --wood: #9b5b2f;
+      --stone: #6c7a89;
+      --gold: #f5c542;
+      --rune: #6f9bff;
+      --wand: #c07bff;
+      --pet: #59c29a;
+      --danger: #ff6b6b;
+      --panel: rgba(20, 20, 28, 0.78);
+      --panel-light: rgba(255, 255, 255, 0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #dff2ff, #9bd1ff 40%, #6fa6ff 100%);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #game-wrap {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+    canvas {
+      width: min(100vw, 1024px);
+      height: min(100vh, 576px);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(20, 22, 36, 0.45);
+      background: #11141f;
+      image-rendering: crisp-edges;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-light);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+      z-index: 5;
+    }
+    .hud-block {
+      display: grid;
+      gap: 4px;
+      align-items: center;
+      justify-items: center;
+      min-width: 90px;
+    }
+    .hud-title {
+      font-size: 11px;
+      color: #d8e7ff;
+    }
+    .icon-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #111;
+    }
+    .icon.heart { background: #ff7e88; }
+    .icon.rune { background: var(--rune); }
+    .icon.key { background: var(--gold); }
+    .icon.wand { background: var(--wand); }
+    .icon.pet { background: var(--pet); }
+    #dialog, #quiz, #pause, #title, #victory {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(10, 12, 20, 0.55);
+      z-index: 10;
+    }
+    .panel {
+      width: min(760px, 92vw);
+      background: var(--panel);
+      border: 1px solid var(--panel-light);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(5, 8, 20, 0.6);
+    }
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+    .panel p {
+      margin: 8px 0;
+      line-height: 1.4;
+      color: #e4eefc;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .choice {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 14px;
+      border-radius: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .choice:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.16); }
+    .choice span.badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: #5bc0ff;
+      color: #04172f;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+    #title .panel, #victory .panel { text-align: center; }
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #f6c96c;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #3b2400;
+      letter-spacing: 0.5px;
+    }
+    button.secondary { background: #8bd1ff; }
+    #corner-note {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 11px;
+      color: #dfe8ff;
+      opacity: 0.7;
+      z-index: 4;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrap">
+    <canvas id="game" width="1024" height="576"></canvas>
+    <div id="hud">
+      <div class="hud-block">
+        <div class="hud-title">Magi Alastair</div>
+        <div id="scene-name">Title</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Hearts</div>
+        <div class="icon-row" id="hearts"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Runes</div>
+        <div class="icon-row" id="runes"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Key</div>
+        <div class="icon-row" id="key"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Wand</div>
+        <div class="icon-row" id="wand"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Pet</div>
+        <div class="icon-row" id="pet"></div>
+      </div>
+    </div>
+    <div id="dialog"><div class="panel"><h2 id="dialog-title"></h2><p id="dialog-body"></p><p><strong>Press E</strong> to continue.</p></div></div>
+    <div id="quiz"><div class="panel"><h2 id="quiz-title">Gate Quiz</h2><p id="quiz-body"></p><div class="choice-grid" id="quiz-choices"></div><p><strong>Use keys 1-4.</strong></p></div></div>
+    <div id="pause"><div class="panel"><h2>Paused</h2><p>Press P to resume.</p></div></div>
+    <div id="title"><div class="panel"><h2>MagiWolf Quest</h2><p>Help Magi Alastair collect runes, a key, and a wand to unlock the Magi Tower.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: P.</p><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
+    <div id="victory"><div class="panel"><h2>Victory!</h2><p>The tower awakens. Magi Alastair has proven their courage and kindness.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
+    <div id="corner-note">M1 prototype build</div>
+  </div>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const hud = {
+      scene: document.getElementById("scene-name"),
+      hearts: document.getElementById("hearts"),
+      runes: document.getElementById("runes"),
+      key: document.getElementById("key"),
+      wand: document.getElementById("wand"),
+      pet: document.getElementById("pet")
+    };
+
+    const overlays = {
+      dialog: document.getElementById("dialog"),
+      dialogTitle: document.getElementById("dialog-title"),
+      dialogBody: document.getElementById("dialog-body"),
+      quiz: document.getElementById("quiz"),
+      quizBody: document.getElementById("quiz-body"),
+      quizChoices: document.getElementById("quiz-choices"),
+      pause: document.getElementById("pause"),
+      title: document.getElementById("title"),
+      victory: document.getElementById("victory"),
+      start: document.getElementById("start-btn"),
+      continue: document.getElementById("continue-btn"),
+      restart: document.getElementById("restart-btn")
+    };
+
+    const INPUT = { left: false, right: false, up: false, interact: false };
+
+    const KEYMAP = {
+      ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up",
+      a: "left", d: "right", w: "up"
+    };
+
+    const game = {
+      scene: "Title",
+      player: null,
+      inventory: { runes: 0, key: false, wand: false },
+      hearts: 3,
+      pet: null,
+      gateStates: { lobby: false, water: false, tower: false },
+      dialogQueue: [],
+      dialogActive: false,
+      quizActive: false,
+      paused: false,
+      camera: { x: 0, y: 0 },
+      lastCheckpoint: null,
+      lastTick: 0
+    };
+
+    const PETS = {
+      pinePup: {
+        id: "pinePup",
+        name: "Pine Pup",
+        graceBonus: 0.12
+      }
+    };
+
+    const SCENES = {
+      Title: { name: "Title" },
+      "Lodge Lobby": {
+        name: "Lodge Lobby",
+        width: 1600,
+        height: 576,
+        background: { top: "#cfe9ff", bottom: "#78b7ff" },
+        platforms: [
+          { x: 0, y: 500, w: 1600, h: 76, type: "ground" },
+          { x: 280, y: 420, w: 180, h: 22, type: "wood" },
+          { x: 560, y: 360, w: 200, h: 22, type: "wood" },
+          { x: 880, y: 310, w: 160, h: 22, type: "wood" }
+        ],
+        runes: [
+          { x: 330, y: 380, collected: false },
+          { x: 640, y: 320, collected: false },
+          { x: 940, y: 270, collected: false }
+        ],
+        gates: [
+          { id: "lobby", x: 1400, y: 350, w: 90, h: 150, label: "Rune Gate" }
+        ],
+        dialogs: [
+          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask a quick addition question." }
+        ],
+        exits: [
+          { x: 1500, y: 350, w: 80, h: 150, target: "Water Park", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Water Park": {
+        name: "Water Park",
+        width: 1800,
+        height: 576,
+        background: { top: "#bfe9ff", bottom: "#5db4ff" },
+        platforms: [
+          { x: 0, y: 510, w: 1800, h: 66, type: "ground" },
+          { x: 240, y: 420, w: 200, h: 18, type: "stone" },
+          { x: 560, y: 360, w: 220, h: 18, type: "stone" },
+          { x: 920, y: 310, w: 220, h: 18, type: "stone" },
+          { x: 1240, y: 260, w: 200, h: 18, type: "stone" }
+        ],
+        hazards: [
+          { x: 420, y: 470, w: 60, h: 20, vx: 80 },
+          { x: 760, y: 470, w: 60, h: 20, vx: -100 }
+        ],
+        keyItem: { x: 1320, y: 220, collected: false },
+        gates: [
+          { id: "water", x: 1640, y: 350, w: 90, h: 150, label: "Key Gate" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Lifeguard", text: "Watch the floaters. Grab the golden key near the slides." }
+        ],
+        exits: [
+          { x: 1700, y: 350, w: 80, h: 150, target: "Forest Trail", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Forest Trail": {
+        name: "Forest Trail",
+        width: 1800,
+        height: 576,
+        background: { top: "#bfe8d0", bottom: "#59ad7a" },
+        platforms: [
+          { x: 0, y: 510, w: 1800, h: 66, type: "ground" },
+          { x: 280, y: 410, w: 200, h: 20, type: "wood" },
+          { x: 620, y: 350, w: 200, h: 20, type: "wood" },
+          { x: 980, y: 300, w: 200, h: 20, type: "wood" }
+        ],
+        checkpoints: [
+          { id: "trail-1", x: 260, y: 450, w: 50, h: 60 },
+          { id: "trail-2", x: 980, y: 450, w: 50, h: 60 }
+        ],
+        petSpot: { x: 680, y: 310, w: 60, h: 60 },
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Forest Spirit", text: "A Pine Pup waits ahead. Press E to befriend it." }
+        ],
+        exits: [
+          { x: 1700, y: 350, w: 80, h: 150, target: "Magi Tower", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Magi Tower": {
+        name: "Magi Tower",
+        width: 1600,
+        height: 576,
+        background: { top: "#e2d5ff", bottom: "#7f6fc1" },
+        platforms: [
+          { x: 0, y: 510, w: 1600, h: 66, type: "ground" },
+          { x: 260, y: 420, w: 200, h: 20, type: "stone" },
+          { x: 600, y: 360, w: 200, h: 20, type: "stone" },
+          { x: 920, y: 300, w: 200, h: 20, type: "stone" }
+        ],
+        wandItem: { x: 980, y: 260, collected: false },
+        gates: [
+          { id: "tower", x: 1380, y: 350, w: 90, h: 150, label: "Tower Gate" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Tower Guide", text: "The wand is above. The final gate checks a quick multiplication." }
+        ],
+        exits: [
+          { x: 1500, y: 350, w: 80, h: 150, target: "Victory", spawn: { x: 100, y: 420 } }
+        ]
+      },
+      Victory: {
+        name: "Victory",
+        width: 1024,
+        height: 576,
+        background: { top: "#fff3c8", bottom: "#f7b76b" },
+        platforms: [ { x: 0, y: 510, w: 1024, h: 66, type: "ground" } ],
+        dialogs: []
+      }
+    };
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+    function createPlayer(spawn) {
+      return {
+        x: spawn.x,
+        y: spawn.y,
+        w: 36,
+        h: 52,
+        vx: 0,
+        vy: 0,
+        speed: 280,
+        jumpPower: 720,
+        gravity: 2200,
+        onGround: false,
+        coyote: 0,
+        jumpBuffer: 0
+      };
+    }
+
+    function setHUD() {
+      hud.scene.textContent = game.scene;
+      hud.hearts.innerHTML = "";
+      for (let i = 0; i < game.hearts; i += 1) {
+        const el = document.createElement("div");
+        el.className = "icon heart";
+        el.textContent = "?";
+        hud.hearts.appendChild(el);
+      }
+      hud.runes.innerHTML = "";
+      for (let i = 0; i < 3; i += 1) {
+        const el = document.createElement("div");
+        el.className = "icon rune";
+        el.style.opacity = i < game.inventory.runes ? "1" : "0.25";
+        el.textContent = "?";
+        hud.runes.appendChild(el);
+      }
+      hud.key.innerHTML = "";
+      const keyEl = document.createElement("div");
+      keyEl.className = "icon key";
+      keyEl.style.opacity = game.inventory.key ? "1" : "0.25";
+      keyEl.textContent = "??";
+      hud.key.appendChild(keyEl);
+      hud.wand.innerHTML = "";
+      const wandEl = document.createElement("div");
+      wandEl.className = "icon wand";
+      wandEl.style.opacity = game.inventory.wand ? "1" : "0.25";
+      wandEl.textContent = "?";
+      hud.wand.appendChild(wandEl);
+      hud.pet.innerHTML = "";
+      const petEl = document.createElement("div");
+      petEl.className = "icon pet";
+      petEl.style.opacity = game.pet ? "1" : "0.25";
+      petEl.textContent = game.pet ? "??" : "–";
+      hud.pet.appendChild(petEl);
+    }
+
+    function showDialog(title, body) {
+      game.dialogActive = true;
+      overlays.dialogTitle.textContent = title;
+      overlays.dialogBody.textContent = body;
+      overlays.dialog.style.display = "grid";
+    }
+
+    function nextDialog() {
+      if (game.dialogQueue.length === 0) {
+        game.dialogActive = false;
+        overlays.dialog.style.display = "none";
+        return;
+      }
+      const item = game.dialogQueue.shift();
+      showDialog(item.title, item.text);
+    }
+
+    function queueDialog(title, text) {
+      game.dialogQueue.push({ title, text });
+      if (!game.dialogActive) {
+        nextDialog();
+      }
+    }
+
+    function showQuiz(question, choices, onResult) {
+      game.quizActive = true;
+      overlays.quizBody.textContent = question;
+      overlays.quizChoices.innerHTML = "";
+      choices.forEach((choice, idx) => {
+        const el = document.createElement("div");
+        el.className = "choice";
+        el.innerHTML = `<span class="badge">${idx + 1}</span><span>${choice}</span>`;
+        el.addEventListener("click", () => onResult(idx));
+        overlays.quizChoices.appendChild(el);
+      });
+      overlays.quiz.style.display = "grid";
+      game.quizHandler = onResult;
+    }
+
+    function closeQuiz() {
+      game.quizActive = false;
+      overlays.quiz.style.display = "none";
+    }
+
+    function saveGame() {
+      const payload = {
+        scene: game.scene,
+        player: { x: game.player.x, y: game.player.y },
+        inventory: game.inventory,
+        hearts: game.hearts,
+        pet: game.pet,
+        gateStates: game.gateStates,
+        lastCheckpoint: game.lastCheckpoint,
+        sceneState: {
+          lobbyRunes: SCENES["Lodge Lobby"].runes.map(r => r.collected),
+          waterKey: SCENES["Water Park"].keyItem.collected,
+          towerWand: SCENES["Magi Tower"].wandItem.collected
+        }
+      };
+      localStorage.setItem("magiwolf-save", JSON.stringify(payload));
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem("magiwolf-save");
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      game.scene = data.scene;
+      game.inventory = data.inventory;
+      game.hearts = data.hearts;
+      game.pet = data.pet;
+      game.gateStates = data.gateStates;
+      game.lastCheckpoint = data.lastCheckpoint;
+      const lobbyRunes = SCENES["Lodge Lobby"].runes;
+      data.sceneState.lobbyRunes.forEach((value, idx) => lobbyRunes[idx].collected = value);
+      SCENES["Water Park"].keyItem.collected = data.sceneState.waterKey;
+      SCENES["Magi Tower"].wandItem.collected = data.sceneState.towerWand;
+      const spawn = data.lastCheckpoint && data.lastCheckpoint.scene === data.scene
+        ? data.lastCheckpoint
+        : data.player;
+      game.player = createPlayer({ x: spawn.x, y: spawn.y });
+      return true;
+    }
+
+    function resetGame() {
+      game.scene = "Lodge Lobby";
+      game.inventory = { runes: 0, key: false, wand: false };
+      game.hearts = 3;
+      game.pet = null;
+      game.gateStates = { lobby: false, water: false, tower: false };
+      game.lastCheckpoint = null;
+      SCENES["Lodge Lobby"].runes.forEach(r => r.collected = false);
+      SCENES["Water Park"].keyItem.collected = false;
+      SCENES["Magi Tower"].wandItem.collected = false;
+      game.player = createPlayer({ x: 100, y: 400 });
+    }
+
+    function respawn() {
+      const checkpoint = game.lastCheckpoint || { scene: game.scene, x: 80, y: 420 };
+      game.scene = checkpoint.scene;
+      game.player = createPlayer({ x: checkpoint.x, y: checkpoint.y });
+    }
+
+    function getScene() {
+      return SCENES[game.scene];
+    }
+
+    function handleGate(scene, gate) {
+      if (game.gateStates[gate.id]) return;
+      if (gate.id === "lobby" && game.inventory.runes < 3) {
+        queueDialog("Rune Gate", "You need 3 runes to attempt the gate.");
+        return;
+      }
+      if (gate.id === "water" && !game.inventory.key) {
+        queueDialog("Key Gate", "You need the Golden Key to attempt the gate.");
+        return;
+      }
+      if (gate.id === "tower" && !game.inventory.wand) {
+        queueDialog("Tower Gate", "You need the Wand to attempt the gate.");
+        return;
+      }
+      const quiz = createGateQuiz(gate.id);
+      showQuiz(quiz.question, quiz.choices, idx => {
+        if (idx === quiz.answer) {
+          game.gateStates[gate.id] = true;
+          closeQuiz();
+          queueDialog("Gate Opened", "Great work! The gate unlocks.");
+          saveGame();
+        } else {
+          queueDialog("Try Again", "Not quite. Pick another answer.");
+        }
+      });
+    }
+
+    function createGateQuiz(id) {
+      if (id === "lobby") {
+        const a = 2 + Math.floor(Math.random() * 5);
+        const b = 2 + Math.floor(Math.random() * 5);
+        const answer = a + b;
+        const choices = shuffle([answer, answer + 1, answer - 1, answer + 2]);
+        return {
+          question: `Addition gate: ${a} + ${b} = ?`,
+          choices: choices.map(n => `${n}`),
+          answer: choices.indexOf(answer)
+        };
+      }
+      if (id === "water") {
+        const a = 5 + Math.floor(Math.random() * 10);
+        const b = 1 + Math.floor(Math.random() * 10);
+        const op = Math.random() > 0.5 ? "+" : "-";
+        const answer = op === "+" ? a + b : a - b;
+        const choices = shuffle([answer, answer + 2, answer - 2, answer + 4]);
+        return {
+          question: `Water gate: ${a} ${op} ${b} = ?`,
+          choices: choices.map(n => `${n}`),
+          answer: choices.indexOf(answer)
+        };
+      }
+      const a = 2 + Math.floor(Math.random() * 4);
+      const b = 2 + Math.floor(Math.random() * 4);
+      const answer = a * b;
+      const choices = shuffle([answer, answer + b, answer - 2, answer + 4]);
+      return {
+        question: `Tower gate: ${a} × ${b} = ?`,
+        choices: choices.map(n => `${n}`),
+        answer: choices.indexOf(answer)
+      };
+    }
+
+    function shuffle(items) {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function enterScene(name, spawn) {
+      game.scene = name;
+      game.player = createPlayer(spawn || { x: 80, y: 420 });
+      game.camera.x = 0;
+      game.camera.y = 0;
+      if (name === "Victory") {
+        overlays.victory.style.display = "grid";
+      } else {
+        overlays.victory.style.display = "none";
+      }
+      setHUD();
+    }
+    function update(dt) {
+      const scene = getScene();
+      const player = game.player;
+      const graceBase = 0.1 + (game.pet ? PETS[game.pet].graceBonus : 0);
+
+      player.coyote = player.onGround ? graceBase : Math.max(0, player.coyote - dt);
+      player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
+
+      if (INPUT.left) player.vx = clamp(player.vx - player.speed * dt * 4, -player.speed, player.speed);
+      if (INPUT.right) player.vx = clamp(player.vx + player.speed * dt * 4, -player.speed, player.speed);
+      if (!INPUT.left && !INPUT.right) player.vx *= 0.85;
+
+      if (player.jumpBuffer > 0 && player.coyote > 0) {
+        player.vy = -player.jumpPower;
+        player.coyote = 0;
+        player.jumpBuffer = 0;
+        player.onGround = false;
+      }
+
+      player.vy += player.gravity * dt;
+      player.vy = clamp(player.vy, -1200, 1200);
+
+      player.x += player.vx * dt;
+      const solidRects = getSolidRects(scene);
+      resolveCollisions(player, solidRects, true);
+
+      player.y += player.vy * dt;
+      player.onGround = false;
+      resolveCollisions(player, solidRects, false);
+
+      player.x = clamp(player.x, 10, scene.width - player.w - 10);
+
+      scene.hazards && scene.hazards.forEach(hazard => {
+        hazard.x += hazard.vx * dt;
+        if (hazard.x < 300 || hazard.x > scene.width - 200) hazard.vx *= -1;
+        if (rectsOverlap(player, hazard)) {
+          takeDamage();
+        }
+      });
+
+      scene.runes && scene.runes.forEach(rune => {
+        if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
+          rune.collected = true;
+          game.inventory.runes += 1;
+          queueDialog("Rune Collected", "A magic rune joins your pack.");
+          saveGame();
+        }
+      });
+
+      if (scene.keyItem && !scene.keyItem.collected && rectsOverlap(player, { x: scene.keyItem.x, y: scene.keyItem.y, w: 26, h: 26 })) {
+        scene.keyItem.collected = true;
+        game.inventory.key = true;
+        queueDialog("Golden Key", "You found the Golden Key.");
+        saveGame();
+      }
+
+      if (scene.wandItem && !scene.wandItem.collected && rectsOverlap(player, { x: scene.wandItem.x, y: scene.wandItem.y, w: 26, h: 26 })) {
+        scene.wandItem.collected = true;
+        game.inventory.wand = true;
+        queueDialog("Tower Wand", "The wand hums with energy.");
+        saveGame();
+      }
+
+      if (scene.checkpoints) {
+        scene.checkpoints.forEach(check => {
+          if (rectsOverlap(player, check)) {
+            game.lastCheckpoint = { scene: game.scene, x: check.x, y: check.y - 20 };
+            saveGame();
+          }
+        });
+      }
+
+      if (scene.petSpot && !game.pet && rectsOverlap(player, scene.petSpot)) {
+        queueDialog("Pine Pup", "Press E to befriend the Pine Pup.");
+      }
+
+      scene.exits && scene.exits.forEach(exit => {
+        if (rectsOverlap(player, exit)) {
+          enterScene(exit.target, exit.spawn);
+        }
+      });
+
+      const camTargetX = clamp(player.x - canvas.width / 2 + player.w / 2, 0, scene.width - canvas.width);
+      game.camera.x += (camTargetX - game.camera.x) * 0.08;
+    }
+
+    function resolveCollisions(player, solids, horizontal) {
+      solids.forEach(rect => {
+        if (rectsOverlap(player, rect)) {
+          if (horizontal) {
+            if (player.vx > 0) player.x = rect.x - player.w;
+            if (player.vx < 0) player.x = rect.x + rect.w;
+            player.vx = 0;
+          } else {
+            if (player.vy > 0) {
+              player.y = rect.y - player.h;
+              player.vy = 0;
+              player.onGround = true;
+            }
+            if (player.vy < 0) {
+              player.y = rect.y + rect.h;
+              player.vy = 0;
+            }
+          }
+        }
+      });
+    }
+
+    function getSolidRects(scene) {
+      const solids = scene.platforms.slice();
+      if (scene.gates) {
+        scene.gates.forEach(gate => {
+          if (!game.gateStates[gate.id]) solids.push(gate);
+        });
+      }
+      return solids;
+    }
+
+    function takeDamage() {
+      if (game.hearts <= 0) return;
+      game.hearts -= 1;
+      setHUD();
+      if (game.hearts <= 0) {
+        queueDialog("Try Again", "Magi Alastair takes a breather. Restarting from last checkpoint.");
+        game.hearts = 3;
+        respawn();
+      }
+    }
+
+    function render() {
+      const scene = getScene();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, scene.background ? scene.background.top : "#000");
+      bg.addColorStop(1, scene.background ? scene.background.bottom : "#000");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const cam = game.camera;
+      drawDecor(scene);
+
+      scene.platforms.forEach(platform => drawPlatform(platform, cam));
+
+      scene.gates && scene.gates.forEach(gate => {
+        if (game.gateStates[gate.id]) {
+          drawGate(gate, cam, true);
+        } else {
+          drawGate(gate, cam, false);
+        }
+      });
+
+      scene.runes && scene.runes.forEach(rune => {
+        if (!rune.collected) drawRune(rune, cam);
+      });
+
+      if (scene.keyItem && !scene.keyItem.collected) drawKey(scene.keyItem, cam);
+      if (scene.wandItem && !scene.wandItem.collected) drawWand(scene.wandItem, cam);
+
+      scene.checkpoints && scene.checkpoints.forEach(check => drawCheckpoint(check, cam));
+      if (scene.petSpot && !game.pet) drawPet(scene.petSpot, cam);
+
+      scene.hazards && scene.hazards.forEach(hazard => drawHazard(hazard, cam));
+
+      drawPlayer(game.player, cam);
+    }
+    function drawPlatform(platform, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      if (platform.type === "ground") {
+        ctx.fillStyle = "#3a5f46";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        ctx.fillStyle = "#2b4033";
+        for (let i = 0; i < platform.w; i += 40) {
+          ctx.fillRect(platform.x + i, platform.y, 20, 10);
+        }
+      } else if (platform.type === "wood") {
+        ctx.fillStyle = "#9a5a2d";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        ctx.strokeStyle = "#6f3d1d";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
+      } else {
+        ctx.fillStyle = "#7d8795";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        ctx.strokeStyle = "#4e5663";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
+      }
+      ctx.restore();
+    }
+
+    function drawGate(gate, cam, open) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = open ? "rgba(255,255,255,0.15)" : "#422a5f";
+      ctx.fillRect(gate.x, gate.y, gate.w, gate.h);
+      ctx.strokeStyle = open ? "#9ad0ff" : "#f0c95f";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(gate.x, gate.y, gate.w, gate.h);
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px Trebuchet MS";
+      ctx.fillText(gate.label, gate.x - 10, gate.y - 8);
+      ctx.restore();
+    }
+
+    function drawRune(rune, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#7aa8ff";
+      ctx.beginPath();
+      ctx.arc(rune.x + 12, rune.y + 12, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#eaf3ff";
+      ctx.fillRect(rune.x + 9, rune.y + 6, 6, 12);
+      ctx.restore();
+    }
+
+    function drawKey(key, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#f5c542";
+      ctx.fillRect(key.x, key.y, 24, 10);
+      ctx.fillRect(key.x + 8, key.y - 8, 8, 8);
+      ctx.restore();
+    }
+
+    function drawWand(wand, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.strokeStyle = "#c07bff";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(wand.x, wand.y + 20);
+      ctx.lineTo(wand.x + 20, wand.y);
+      ctx.stroke();
+      ctx.fillStyle = "#fff4a8";
+      ctx.beginPath();
+      ctx.arc(wand.x + 22, wand.y - 2, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawCheckpoint(check, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.fillRect(check.x, check.y, check.w, check.h);
+      ctx.strokeStyle = "#fff";
+      ctx.strokeRect(check.x, check.y, check.w, check.h);
+      ctx.restore();
+    }
+
+    function drawPet(spot, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#59c29a";
+      ctx.beginPath();
+      ctx.arc(spot.x + 30, spot.y + 30, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1a3b2f";
+      ctx.fillRect(spot.x + 20, spot.y + 26, 6, 6);
+      ctx.fillRect(spot.x + 34, spot.y + 26, 6, 6);
+      ctx.restore();
+    }
+
+    function drawHazard(hazard, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#ff6b6b";
+      ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
+      ctx.restore();
+    }
+
+    function drawPlayer(player, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#3b2f5c";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = "#f4d3b3";
+      ctx.fillRect(player.x + 6, player.y + 6, player.w - 12, 16);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(player.x + 10, player.y + 12, 5, 5);
+      ctx.fillRect(player.x + 20, player.y + 12, 5, 5);
+      ctx.restore();
+    }
+
+    function drawDecor(scene) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      for (let i = 0; i < 5; i += 1) {
+        ctx.beginPath();
+        ctx.arc(100 + i * 180, 120 + i * 10, 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function handleInteraction() {
+      const scene = getScene();
+      const player = game.player;
+
+      if (scene.petSpot && !game.pet && rectsOverlap(player, scene.petSpot)) {
+        game.pet = "pinePup";
+        queueDialog("Pine Pup", "The Pine Pup joins you, giving extra jump grace.");
+        saveGame();
+        return;
+      }
+
+      if (scene.gates) {
+        scene.gates.forEach(gate => {
+          if (rectsOverlap(player, gate)) handleGate(scene, gate);
+        });
+      }
+
+      if (scene.dialogs) {
+        scene.dialogs.forEach(dialog => {
+          if (rectsOverlap(player, dialog)) {
+            queueDialog(dialog.title, dialog.text);
+          }
+        });
+      }
+    }
+    function tick(timestamp) {
+      if (!game.lastTick) game.lastTick = timestamp;
+      const dt = Math.min(0.032, (timestamp - game.lastTick) / 1000);
+      game.lastTick = timestamp;
+
+      if (!game.paused && !game.dialogActive && !game.quizActive && game.scene !== "Title") {
+        update(dt);
+      }
+      render();
+      setHUD();
+      requestAnimationFrame(tick);
+    }
+
+    function init() {
+      overlays.title.style.display = "grid";
+      overlays.continue.disabled = !localStorage.getItem("magiwolf-save");
+      overlays.start.addEventListener("click", () => {
+        overlays.title.style.display = "none";
+        resetGame();
+        setHUD();
+        saveGame();
+      });
+      overlays.continue.addEventListener("click", () => {
+        if (loadGame()) {
+          overlays.title.style.display = "none";
+          setHUD();
+        }
+      });
+      overlays.restart.addEventListener("click", () => {
+        overlays.victory.style.display = "none";
+        resetGame();
+        setHUD();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.repeat) return;
+        const key = event.key;
+        if (KEYMAP[key]) INPUT[KEYMAP[key]] = true;
+        if (key === " " || key === "Spacebar") {
+          if (game.player) game.player.jumpBuffer = 0.12;
+        }
+        if (key === "p" || key === "P") {
+          game.paused = !game.paused;
+          overlays.pause.style.display = game.paused ? "grid" : "none";
+        }
+        if (key === "e" || key === "E") {
+          if (game.dialogActive) {
+            nextDialog();
+          } else if (!game.quizActive && game.scene !== "Title") {
+            handleInteraction();
+          }
+        }
+        if (game.quizActive && ["1", "2", "3", "4"].includes(key)) {
+          const idx = Number(key) - 1;
+          if (game.quizHandler) game.quizHandler(idx);
+        }
+      });
+
+      document.addEventListener("keyup", (event) => {
+        const key = event.key;
+        if (KEYMAP[key]) INPUT[KEYMAP[key]] = false;
+      });
+
+      requestAnimationFrame(tick);
+    }
+
+    init();
+  </script>
+</body>
+</html>
