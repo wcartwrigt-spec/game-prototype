@@ -394,7 +394,8 @@
       lastTick: 0,
       touchAxisX: 0,
       invuln: 0,
-      pupShield: false
+      pupShield: false,
+      pupPos: { x: 0, y: 0 }
     };
 
     const PETS = {
@@ -690,6 +691,10 @@
         ? data.lastCheckpoint
         : data.player;
       game.player = createPlayer({ x: spawn.x, y: spawn.y });
+      if (game.pet) {
+        game.pupPos.x = game.player.x - 40;
+        game.pupPos.y = game.player.y + 20;
+      }
       return true;
     }
 
@@ -795,6 +800,10 @@
       game.camera.x = 0;
       game.camera.y = 0;
       game.pupShield = !!game.pet;
+      if (game.pet && game.player) {
+        game.pupPos.x = game.player.x - 40;
+        game.pupPos.y = game.player.y + 20;
+      }
       if (name === "Victory") {
         overlays.victory.style.display = "grid";
       } else {
@@ -863,6 +872,13 @@
             }
           }
         });
+      }
+
+      if (game.pet) {
+        const targetX = player.x - 36;
+        const targetY = player.y + 20;
+        game.pupPos.x += (targetX - game.pupPos.x) * 0.08;
+        game.pupPos.y += (targetY - game.pupPos.y) * 0.08;
       }
 
       scene.runes && scene.runes.forEach(rune => {
@@ -951,7 +967,6 @@
       if (game.pet && game.pupShield) {
         game.pupShield = false;
         game.invuln = 0.9;
-        quickDialog("Pine Pup Shield", "Pine Pup blocks a hit!", 800);
         return;
       }
 
@@ -1003,6 +1018,9 @@
       scene.enemies && scene.enemies.forEach(enemy => {
         if (!enemy.defeated) drawEnemy(enemy, cam);
       });
+      if (game.pet) {
+        drawPup(game.pupPos, cam, game.pupShield);
+      }
 
       if (game.player) {
       drawPlayer(game.player, cam);
@@ -1299,6 +1317,29 @@
       ctx.restore();
     }
 
+    function drawPup(pup, cam, shielding) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#4aa982";
+      ctx.beginPath();
+      ctx.arc(pup.x + 16, pup.y + 16, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1a3b2f";
+      ctx.fillRect(pup.x + 10, pup.y + 14, 4, 4);
+      ctx.fillRect(pup.x + 20, pup.y + 14, 4, 4);
+      ctx.fillStyle = "#f8f1d0";
+      ctx.fillRect(pup.x + 13, pup.y + 22, 6, 3);
+      if (shielding) {
+        const pulse = 0.6 + Math.sin(Date.now() / 180) * 0.2;
+        ctx.strokeStyle = `rgba(255, 230, 160, ${pulse})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pup.x + 16, pup.y + 16, 24, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawPlayer(player, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
@@ -1342,6 +1383,10 @@
         scene.petSpot.prompted = true;
         game.pupShield = true;
         game.hearts = Math.min(3, game.hearts + 1);
+        if (game.player) {
+          game.pupPos.x = game.player.x - 40;
+          game.pupPos.y = game.player.y + 20;
+        }
         queueDialog("Pine Pup", "The Pine Pup joins you, giving extra jump grace.");
         saveGame();
         return;
