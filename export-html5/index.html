@@ -392,7 +392,8 @@
       camera: { x: 0, y: 0 },
       lastCheckpoint: null,
       lastTick: 0,
-      touchAxisX: 0
+      touchAxisX: 0,
+      invuln: 0
     };
 
     const PETS = {
@@ -447,6 +448,9 @@
           { x: 420, y: 470, w: 60, h: 20, vx: 80 },
           { x: 760, y: 470, w: 60, h: 20, vx: -100 }
         ],
+        enemies: [
+          { x: 520, y: 468, w: 32, h: 32, vx: 50, minX: 420, maxX: 720 }
+        ],
         keyItem: { x: 1320, y: 220, collected: false },
         gates: [
           { id: "water", x: 1640, y: 350, w: 90, h: 150, label: "Key Gate" }
@@ -473,6 +477,9 @@
           { id: "trail-1", x: 260, y: 450, w: 50, h: 60 },
           { id: "trail-2", x: 980, y: 450, w: 50, h: 60 }
         ],
+        enemies: [
+          { x: 420, y: 468, w: 34, h: 34, vx: 45, minX: 320, maxX: 620 }
+        ],
         petSpot: { x: 680, y: 310, w: 60, h: 60, prompted: false },
         dialogs: [
           { x: 120, y: 440, w: 90, h: 60, title: "Forest Spirit", text: "A Pine Pup waits ahead. Press E to befriend it." }
@@ -493,6 +500,10 @@
           { x: 920, y: 300, w: 200, h: 20, type: "stone" }
         ],
         wandItem: { x: 980, y: 260, collected: false },
+        enemies: [
+          { x: 320, y: 468, w: 36, h: 36, vx: 55, minX: 260, maxX: 520 },
+          { x: 760, y: 468, w: 36, h: 36, vx: -55, minX: 640, maxX: 980 }
+        ],
         gates: [
           { id: "tower", x: 1380, y: 350, w: 90, h: 150, label: "Tower Gate" }
         ],
@@ -792,6 +803,9 @@
       const scene = getScene();
       const player = game.player;
       const graceBase = 0.1 + (game.pet ? PETS[game.pet].graceBonus : 0);
+      if (game.invuln > 0) {
+        game.invuln = Math.max(0, game.invuln - dt);
+      }
 
       player.coyote = player.onGround ? graceBase : Math.max(0, player.coyote - dt);
       player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
@@ -828,6 +842,25 @@
           takeDamage();
         }
       });
+
+      if (scene.enemies) {
+        scene.enemies.forEach(enemy => {
+          if (enemy.defeated) return;
+          enemy.x += enemy.vx * dt;
+          if (enemy.x < enemy.minX || enemy.x > enemy.maxX) enemy.vx *= -1;
+          if (rectsOverlap(player, enemy)) {
+            const playerBottom = player.y + player.h;
+            const enemyTop = enemy.y + 6;
+            if (player.vy > 120 && playerBottom < enemyTop + 12) {
+              enemy.defeated = true;
+              player.vy = -player.jumpPower * 0.6;
+              quickDialog("Stomp!", "Enemy cleared.", 600);
+            } else {
+              takeDamage();
+            }
+          }
+        });
+      }
 
       scene.runes && scene.runes.forEach(rune => {
         if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
@@ -910,8 +943,10 @@
 
     function takeDamage() {
       if (game.hearts <= 0) return;
+      if (game.invuln > 0) return;
       game.hearts -= 1;
       setHUD();
+      game.invuln = game.pet ? 0.9 : 0.6;
       if (game.hearts <= 0) {
         queueDialog("Try Again", "Magi Alastair takes a breather. Restarting from last checkpoint.");
         game.hearts = 3;
@@ -947,6 +982,9 @@
       if (scene.petSpot && !game.pet) drawPet(scene.petSpot, cam);
 
       scene.hazards && scene.hazards.forEach(hazard => drawHazard(hazard, cam));
+      scene.enemies && scene.enemies.forEach(enemy => {
+        if (!enemy.defeated) drawEnemy(enemy, cam);
+      });
 
       if (game.player) {
       drawPlayer(game.player, cam);
@@ -1225,6 +1263,21 @@
       ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
       ctx.fillStyle = "rgba(255,255,255,0.6)";
       ctx.fillRect(hazard.x + 6, hazard.y + 4, hazard.w - 12, 3);
+      ctx.restore();
+    }
+
+    function drawEnemy(enemy, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.fillStyle = "#3c2b3a";
+      ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+      ctx.fillStyle = "#f0b17c";
+      ctx.fillRect(enemy.x + 6, enemy.y + 8, enemy.w - 12, 8);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(enemy.x + 8, enemy.y + 12, 4, 4);
+      ctx.fillRect(enemy.x + enemy.w - 12, enemy.y + 12, 4, 4);
+      ctx.fillStyle = "#c65757";
+      ctx.fillRect(enemy.x + 6, enemy.y + enemy.h - 6, enemy.w - 12, 4);
       ctx.restore();
     }
 
