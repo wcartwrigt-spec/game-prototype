@@ -393,7 +393,8 @@
       lastCheckpoint: null,
       lastTick: 0,
       touchAxisX: 0,
-      invuln: 0
+      invuln: 0,
+      pupShield: false
     };
 
     const PETS = {
@@ -792,6 +793,7 @@
       game.player = createPlayer(spawn || { x: 80, y: 420 });
       game.camera.x = 0;
       game.camera.y = 0;
+      game.pupShield = !!game.pet;
       if (name === "Victory") {
         overlays.victory.style.display = "grid";
       } else {
@@ -839,7 +841,7 @@
         hazard.x += hazard.vx * dt;
         if (hazard.x < 300 || hazard.x > scene.width - 200) hazard.vx *= -1;
         if (rectsOverlap(player, hazard)) {
-          takeDamage();
+          takeDamage(hazard.x + hazard.w / 2);
         }
       });
 
@@ -856,7 +858,7 @@
               player.vy = -player.jumpPower * 0.6;
               quickDialog("Stomp!", "Enemy cleared.", 600);
             } else {
-              takeDamage();
+              takeDamage(enemy.x + enemy.w / 2);
             }
           }
         });
@@ -941,12 +943,27 @@
       return solids;
     }
 
-    function takeDamage() {
+    function takeDamage(sourceX) {
       if (game.hearts <= 0) return;
       if (game.invuln > 0) return;
+
+      if (game.pet && game.pupShield) {
+        game.pupShield = false;
+        game.invuln = 0.9;
+        quickDialog("Pine Pup Shield", "Pine Pup blocks a hit!", 800);
+        return;
+      }
+
       game.hearts -= 1;
       setHUD();
-      game.invuln = game.pet ? 0.9 : 0.6;
+      game.invuln = game.pet ? 1.1 : 0.7;
+
+      if (game.player) {
+        const dir = (sourceX !== undefined && game.player.x < sourceX) ? -1 : 1;
+        game.player.vx = dir * 260;
+        game.player.vy = -320;
+      }
+
       if (game.hearts <= 0) {
         queueDialog("Try Again", "Magi Alastair takes a breather. Restarting from last checkpoint.");
         game.hearts = 3;
@@ -1322,6 +1339,8 @@
       if (scene.petSpot && !game.pet && rectsOverlap(interact, scene.petSpot)) {
         game.pet = "pinePup";
         scene.petSpot.prompted = true;
+        game.pupShield = true;
+        game.hearts = Math.min(3, game.hearts + 1);
         queueDialog("Pine Pup", "The Pine Pup joins you, giving extra jump grace.");
         saveGame();
         return;
