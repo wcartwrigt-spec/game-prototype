@@ -800,7 +800,9 @@
 
       scene.hazards && scene.hazards.forEach(hazard => drawHazard(hazard, cam));
 
-      drawPlayer(game.player, cam);
+      if (game.player) {
+        drawPlayer(game.player, cam);
+      }
     }
     function drawPlatform(platform, cam) {
       ctx.save();
