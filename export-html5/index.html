@@ -1352,6 +1352,7 @@
       const setInput = (action, isDown) => {
         if (action === "jump" && isDown && game.player) {
           game.player.jumpBuffer = 0.12;
+          vibrate(20);
           return;
         }
         if (action === "interact" && isDown) {
@@ -1360,11 +1361,13 @@
           } else if (!game.quizActive && game.scene !== "Title") {
             handleInteraction();
           }
+          vibrate(25);
           return;
         }
         if (action === "pause" && isDown) {
           game.paused = !game.paused;
           overlays.pause.style.display = game.paused ? "grid" : "none";
+          vibrate(15);
         }
       };
       buttons.forEach(button => {
@@ -1420,6 +1423,7 @@
         event.preventDefault();
         activeId = event.pointerId;
         updateStick(event.clientX, event.clientY);
+        vibrate(10);
       });
       window.addEventListener("pointermove", (event) => {
         if (activeId === null || event.pointerId !== activeId) return;
@@ -1428,11 +1432,18 @@
       window.addEventListener("pointerup", (event) => {
         if (event.pointerId !== activeId) return;
         resetStick();
+        vibrate(8);
       });
       window.addEventListener("pointercancel", (event) => {
         if (event.pointerId !== activeId) return;
         resetStick();
       });
+    }
+
+    function vibrate(duration) {
+      if (navigator.vibrate) {
+        navigator.vibrate(duration);
+      }
     }
   </script>
 </body>
