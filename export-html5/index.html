@@ -831,7 +831,7 @@
         if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
           rune.collected = true;
           game.inventory.runes += 1;
-          quickDialog("Rune Collected", "A magic rune joins your pack.");
+          // No dialog on rune pickup to keep flow smooth.
           saveGame();
         }
       });
