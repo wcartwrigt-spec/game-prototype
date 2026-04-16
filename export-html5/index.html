@@ -46,8 +46,7 @@
     #hud {
       position: absolute;
       top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 16px;
       display: flex;
       gap: 18px;
       align-items: center;
@@ -59,6 +58,63 @@
       font-size: 12px;
       letter-spacing: 1px;
       z-index: 5;
+      max-width: min(72vw, 760px);
+      backdrop-filter: blur(8px);
+    }
+    #quest-chip {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      min-width: min(300px, 34vw);
+      max-width: min(340px, 38vw);
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(29, 28, 44, 0.9), rgba(18, 18, 28, 0.78));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 34px rgba(10, 10, 18, 0.26);
+      z-index: 5;
+      backdrop-filter: blur(8px);
+    }
+    .quest-kicker {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: #ffe3a1;
+      margin-bottom: 6px;
+    }
+    .quest-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff8e9;
+      margin-bottom: 4px;
+    }
+    .quest-copy {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #dce6ff;
+    }
+    #prompt-chip {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(17, 18, 28, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff4d3;
+      font-size: 13px;
+      letter-spacing: 0.4px;
+      z-index: 7;
+      box-shadow: 0 12px 30px rgba(10, 10, 18, 0.28);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    #prompt-chip.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
     }
     .hud-block {
       display: grid;
@@ -82,14 +138,17 @@
       justify-content: center;
     }
     .icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 0;
       display: grid;
       place-items: center;
       font-size: 12px;
       font-weight: 700;
       color: #111;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
     }
     .icon.heart { background: #ff7e88; }
     .icon.rune { background: var(--rune); }
@@ -150,7 +209,112 @@
       display: grid;
       place-items: center;
     }
+    .quiz-meta {
+      margin-top: 12px;
+      color: #ffe7a7;
+      font-size: 12px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .quiz-actions {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 16px;
+    }
+    #quiz-input {
+      width: 100%;
+      min-width: 220px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(8, 12, 22, 0.5);
+      color: #fff;
+      font-size: 18px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      text-transform: lowercase;
+    }
+    #quiz-input:focus {
+      outline: 2px solid rgba(91, 192, 255, 0.55);
+      outline-offset: 1px;
+    }
+    .quiz-hint {
+      min-height: 24px;
+      margin-top: 12px;
+      color: #dce6ff;
+      font-size: 14px;
+      line-height: 1.45;
+    }
     #title .panel, #victory .panel { text-align: center; }
+    .title-panel {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(255, 232, 154, 0.26), transparent 34%),
+        radial-gradient(circle at top right, rgba(118, 200, 255, 0.22), transparent 30%),
+        rgba(19, 19, 31, 0.86);
+    }
+    .title-panel::before {
+      content: "";
+      position: absolute;
+      inset: auto -40px -70px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(115, 195, 255, 0.26), rgba(115, 195, 255, 0));
+      pointer-events: none;
+    }
+    .title-lead {
+      max-width: 560px;
+      margin: 0 auto 10px auto;
+      color: #f2f5ff;
+    }
+    .title-highlight {
+      display: inline-block;
+      padding: 5px 10px;
+      margin-bottom: 12px;
+      border-radius: 999px;
+      background: rgba(255, 220, 130, 0.16);
+      color: #ffe39b;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+    }
+    .feature-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+      text-align: left;
+    }
+    .feature-card {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .feature-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff2ce;
+      font-size: 13px;
+    }
+    .feature-card span {
+      display: block;
+      color: #dbe5f8;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .victory-stars {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0 6px;
+      font-size: 24px;
+      color: #ffe28c;
+    }
     .btn-row {
       display: flex;
       justify-content: center;
@@ -268,14 +432,39 @@
       }
       #hud {
         top: 8px;
+        left: 8px;
         gap: 10px;
         padding: 8px 10px;
         font-size: 10px;
+        max-width: calc(100vw - 16px);
+      }
+      #quest-chip {
+        top: auto;
+        right: 8px;
+        left: 8px;
+        bottom: 86px;
+        min-width: 0;
+        max-width: none;
+        padding: 12px 14px;
+      }
+      #prompt-chip {
+        bottom: 18px;
+        width: min(92vw, 520px);
+        text-align: center;
       }
       .hud-block { min-width: 70px; }
       .choice {
         font-size: 16px;
         padding: 16px 14px;
+      }
+      .quiz-actions {
+        grid-template-columns: 1fr;
+      }
+      #quiz-input {
+        min-width: 0;
+      }
+      .feature-strip {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -314,11 +503,17 @@
         <div class="hud-value" id="pet-value"></div>
       </div>
     </div>
+    <div id="quest-chip">
+      <div class="quest-kicker">Adventure Goal</div>
+      <div class="quest-title" id="quest-title">Begin the quest</div>
+      <div class="quest-copy" id="quest-copy">Start a new adventure and explore the lodge.</div>
+    </div>
+    <div id="prompt-chip">Move with arrows or A/D. Jump with Space.</div>
     <div id="dialog"><div class="panel"><h2 id="dialog-title"></h2><p id="dialog-body"></p><p><strong>Press E</strong> to continue.</p></div></div>
-    <div id="quiz"><div class="panel"><h2 id="quiz-title">Gate Quiz</h2><p id="quiz-body"></p><div class="choice-grid" id="quiz-choices"></div><p><strong>Use keys 1-4.</strong></p></div></div>
+    <div id="quiz"><div class="panel"><h2 id="quiz-title">Spelling Gate</h2><p id="quiz-body"></p><div class="quiz-meta" id="quiz-meta"></div><div class="quiz-actions"><button id="quiz-hear-btn" class="secondary">Hear Word</button><input id="quiz-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type the spelling"><button id="quiz-submit-btn">Spell It</button></div><div class="quiz-hint" id="quiz-hint"></div><p><strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.</p></div></div>
     <div id="pause"><div class="panel"><h2>Paused</h2><p>Press P to resume.</p></div></div>
-    <div id="title"><div class="panel"><h2>MagiWolf Quest</h2><p>Help Magi Alastair collect runes, a key, and a wand to unlock the Magi Tower.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: P.</p><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
-    <div id="victory"><div class="panel"><h2>Victory!</h2><p>The tower awakens. Magi Alastair has proven their courage and kindness.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
+    <div id="title"><div class="panel title-panel"><div class="title-highlight">Kid-friendly platform adventure</div><h2>MagiWolf Quest</h2><p class="title-lead">Guide Magi Alastair through the lodge, splash park, forest trail, and the tower of sparkly spelling gates.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: P.</p><div class="feature-strip"><div class="feature-card"><strong>Collect bright runes</strong><span>Every scene gives a clear goal and a satisfying treasure to chase.</span></div><div class="feature-card"><strong>Befriend Pine Pup</strong><span>Your magical pet follows along and protects you from one bonk.</span></div><div class="feature-card"><strong>Beat the spelling gates</strong><span>Each gate now uses school spelling words for quick reading practice.</span></div></div><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
+    <div id="victory"><div class="panel"><div class="victory-stars"><span>★</span><span>★</span><span>★</span></div><h2>Victory!</h2><p>The tower awakens. Magi Alastair has proven their courage, kindness, and spelling power.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
     <div id="touch-controls">
       <div class="touch-cluster touch-left">
         <div class="joystick" id="joystick">
@@ -350,7 +545,10 @@
       runesValue: document.getElementById("runes-value"),
       keyValue: document.getElementById("key-value"),
       wandValue: document.getElementById("wand-value"),
-      petValue: document.getElementById("pet-value")
+      petValue: document.getElementById("pet-value"),
+      questTitle: document.getElementById("quest-title"),
+      questCopy: document.getElementById("quest-copy"),
+      prompt: document.getElementById("prompt-chip")
     };
 
     const overlays = {
@@ -358,8 +556,13 @@
       dialogTitle: document.getElementById("dialog-title"),
       dialogBody: document.getElementById("dialog-body"),
       quiz: document.getElementById("quiz"),
+      quizTitle: document.getElementById("quiz-title"),
       quizBody: document.getElementById("quiz-body"),
-      quizChoices: document.getElementById("quiz-choices"),
+      quizMeta: document.getElementById("quiz-meta"),
+      quizInput: document.getElementById("quiz-input"),
+      quizHear: document.getElementById("quiz-hear-btn"),
+      quizSubmit: document.getElementById("quiz-submit-btn"),
+      quizHint: document.getElementById("quiz-hint"),
       pause: document.getElementById("pause"),
       title: document.getElementById("title"),
       victory: document.getElementById("victory"),
@@ -378,6 +581,65 @@
       a: "left", d: "right", w: "up"
     };
 
+    const SPRITES = {
+      backgrounds: {
+        clouds: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_clouds.png",
+        hills: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_hills.png",
+        trees: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_trees.png",
+        mushrooms: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_mushrooms.png",
+        desert: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_desert.png"
+      },
+      player: {
+        idle: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_idle.png",
+        jump: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_jump.png",
+        walkA: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_walk_a.png",
+        walkB: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_walk_b.png",
+        duck: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_duck.png",
+        hit: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_hit.png"
+      },
+      pickups: {
+        rune: "assets/kenney_new_platformer/Sprites/Tiles/Double/gem_blue.png",
+        key: "assets/kenney_new_platformer/Sprites/Tiles/Double/key_yellow.png",
+        wand: "assets/kenney_new_platformer/Sprites/Tiles/Double/star.png",
+        heart: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart.png"
+      },
+      hud: {
+        heart: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart.png",
+        heartEmpty: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart_empty.png",
+        key: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_key_yellow.png",
+        player: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_player_purple.png",
+        pet: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_player_green.png"
+      },
+      props: {
+        grass: "assets/kenney_new_platformer/Sprites/Tiles/Double/grass.png",
+        plank: "assets/kenney_new_platformer/Sprites/Tiles/Double/block_planks.png",
+        stone: "assets/kenney_new_platformer/Sprites/Tiles/Double/bricks_grey.png",
+        bush: "assets/kenney_new_platformer/Sprites/Tiles/Double/bush.png",
+        rock: "assets/kenney_new_platformer/Sprites/Tiles/Double/rock.png",
+        mushroom: "assets/kenney_new_platformer/Sprites/Tiles/Double/mushroom_red.png",
+        signRight: "assets/kenney_new_platformer/Sprites/Tiles/Double/sign_right.png",
+        checkpointA: "assets/kenney_new_platformer/Sprites/Tiles/Double/flag_yellow_a.png",
+        checkpointB: "assets/kenney_new_platformer/Sprites/Tiles/Double/flag_yellow_b.png",
+        gateClosed: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_closed.png",
+        gateClosedTop: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_closed_top.png",
+        gateOpen: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_open.png",
+        gateOpenTop: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_open_top.png",
+        spikes: "assets/kenney_new_platformer/Sprites/Tiles/Double/saw.png",
+        torchA: "assets/kenney_new_platformer/Sprites/Tiles/Double/torch_on_a.png",
+        torchB: "assets/kenney_new_platformer/Sprites/Tiles/Double/torch_on_b.png"
+      },
+      enemies: {
+        waterA: "assets/kenney_new_platformer/Sprites/Enemies/Double/snail_walk_a.png",
+        waterB: "assets/kenney_new_platformer/Sprites/Enemies/Double/snail_walk_b.png",
+        forestA: "assets/kenney_new_platformer/Sprites/Enemies/Double/mouse_walk_a.png",
+        forestB: "assets/kenney_new_platformer/Sprites/Enemies/Double/mouse_walk_b.png",
+        towerA: "assets/kenney_new_platformer/Sprites/Enemies/Double/slime_normal_walk_a.png",
+        towerB: "assets/kenney_new_platformer/Sprites/Enemies/Double/slime_normal_walk_b.png"
+      }
+    };
+
+    const ART = {};
+
     const game = {
       scene: "Title",
       player: null,
@@ -395,7 +657,13 @@
       touchAxisX: 0,
       invuln: 0,
       pupShield: false,
-      pupPos: { x: 0, y: 0 }
+      pupPos: { x: 0, y: 0 },
+      facing: 1,
+      fx: [],
+      promptText: "",
+      promptTimer: 0,
+      quizHandler: null,
+      quizRound: null
     };
 
     const PETS = {
@@ -404,6 +672,85 @@
         name: "Pine Pup",
         graceBonus: 0.12
       }
+    };
+
+    const SPELLING_GATES = {
+      lobby: [
+        {
+          word: "gnarl",
+          definition: "to twist into rough knots",
+          sentence: "Tree roots gnarl around the old rock.",
+          displaySentence: "Tree roots ____ around the old rock.",
+          hints: ["It starts with \"gn\".", "The first letter is silent.", "It ends with \"arl\"."]
+        },
+        {
+          word: "wrist",
+          definition: "the joint between the hand and the arm",
+          sentence: "She wore a bracelet on her wrist.",
+          displaySentence: "She wore a bracelet on her ____.",
+          hints: ["It starts with \"wr\".", "The first letter is silent.", "It ends with \"ist\"."]
+        },
+        {
+          word: "coach",
+          definition: "a person who trains a team or player",
+          sentence: "The coach helped the team practice.",
+          displaySentence: "The ____ helped the team practice.",
+          hints: ["It starts with \"co\".", "It has the vowel team \"oa\".", "It ends with \"ch\"."]
+        }
+      ],
+      water: [
+        {
+          word: "city",
+          definition: "a large town with many streets and buildings",
+          sentence: "The city has tall buildings and busy streets.",
+          displaySentence: "The ____ has tall buildings and busy streets.",
+          hints: ["It starts with \"c\".", "The middle vowel is \"i\".", "It ends with \"ty\"."]
+        },
+        {
+          word: "game",
+          definition: "an activity or contest played for fun",
+          sentence: "We played a game after lunch.",
+          displaySentence: "We played a ____ after lunch.",
+          hints: ["It starts with \"g\".", "It has a silent e.", "It ends with \"me\"."]
+        },
+        {
+          word: "match",
+          definition: "a game or contest between players or teams",
+          sentence: "The match started right after warmups.",
+          displaySentence: "The ____ started right after warmups.",
+          hints: ["It starts with \"m\".", "The short vowel is \"a\".", "It ends with \"tch\"."]
+        }
+      ],
+      tower: [
+        {
+          word: "limb",
+          definition: "a large branch on a tree",
+          sentence: "A squirrel ran across the limb.",
+          displaySentence: "A squirrel ran across the ____.",
+          hints: ["It starts with \"l\".", "The last letter is silent.", "It ends with \"mb\"."]
+        },
+        {
+          word: "judge",
+          definition: "a person who makes a decision after listening",
+          sentence: "The judge listened before making a choice.",
+          displaySentence: "The ____ listened before making a choice.",
+          hints: ["It starts with \"j\".", "It has \"dg\" in the middle.", "It ends with silent e."]
+        },
+        {
+          word: "know",
+          definition: "to understand or be sure about something",
+          sentence: "I know the answer now.",
+          displaySentence: "I ____ the answer now.",
+          hints: ["It starts with \"kn\".", "The first letter is silent.", "It ends with \"ow\"."]
+        },
+        {
+          word: "knew",
+          definition: "already understood in the past",
+          sentence: "She knew the story already.",
+          displaySentence: "She ____ the story already.",
+          hints: ["It starts with \"kn\".", "The first letter is silent.", "It ends with \"ew\"."]
+        }
+      ]
     };
 
     const SCENES = {
@@ -429,7 +776,7 @@
           { id: "lobby", x: 1400, y: 350, w: 90, h: 150, label: "Rune Gate" }
         ],
         dialogs: [
-          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask a quick addition question." },
+          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask you to spot the correct spelling words." },
           { x: 460, y: 360, w: 80, h: 80, title: "Pine Pup", text: "A Pine Pup is waiting on the balcony. Press E to befriend it." }
         ],
         exits: [
@@ -511,7 +858,7 @@
           { id: "tower", x: 1380, y: 350, w: 90, h: 150, label: "Tower Gate" }
         ],
         dialogs: [
-          { x: 120, y: 440, w: 90, h: 60, title: "Tower Guide", text: "The wand is above. The final gate checks a quick multiplication." }
+          { x: 120, y: 440, w: 90, h: 60, title: "Tower Guide", text: "The wand is above. The final gate tests the last spelling words." }
         ],
         exits: [
           { x: 1500, y: 350, w: 80, h: 150, target: "Victory", spawn: { x: 100, y: 420 } }
@@ -549,46 +896,202 @@
       };
     }
 
+    function getQuestInfo() {
+      if (game.scene === "Title") {
+        return {
+          title: "Begin the quest",
+          copy: "Start a new adventure and explore the lodge for your first three runes."
+        };
+      }
+      if (game.scene === "Lodge Lobby") {
+        return {
+          title: game.inventory.runes < 3 ? "Gather the lodge runes" : "Open the rune gate",
+          copy: game.inventory.runes < 3
+            ? `Find the 3 glowing runes. You have ${game.inventory.runes}/3 so far.`
+            : "Head to the glowing gate on the far right and clear the first spelling challenge."
+        };
+      }
+      if (game.scene === "Water Park") {
+        return {
+          title: game.inventory.key ? "Unlock the water gate" : "Find the Golden Key",
+          copy: game.inventory.key
+            ? "The key is yours. Reach the gate at the far end and finish the next spelling words."
+            : "Hop past floater hazards and climb toward the Golden Key near the slides."
+        };
+      }
+      if (game.scene === "Forest Trail") {
+        return {
+          title: "Follow the forest trail",
+          copy: "Keep moving right, touch the checkpoint banners, and stay close to Pine Pup."
+        };
+      }
+      if (game.scene === "Magi Tower") {
+        return {
+          title: game.inventory.wand ? "Finish the tower gate" : "Claim the tower wand",
+          copy: game.inventory.wand
+            ? "The wand is glowing. Reach the final gate and finish the last spelling words."
+            : "Climb the tower steps, dodge the critters, and grab the wand above."
+        };
+      }
+      return {
+        title: "Celebrate the victory",
+        copy: "You made it to the end of this prototype adventure."
+      };
+    }
+
+    function setPrompt(text) {
+      game.promptText = text || "";
+      hud.prompt.textContent = game.promptText;
+      hud.prompt.classList.toggle("visible", !!game.promptText);
+    }
+
     function setHUD() {
+      const quest = getQuestInfo();
       hud.scene.textContent = game.scene || "?";
+      hud.questTitle.textContent = quest.title;
+      hud.questCopy.textContent = quest.copy;
       hud.hearts.innerHTML = "";
-      for (let i = 0; i < game.hearts; i += 1) {
-        const el = document.createElement("div");
-        el.className = "icon heart";
-        el.textContent = "H";
-        hud.hearts.appendChild(el);
+      for (let i = 0; i < 3; i += 1) {
+        const filled = i < game.hearts;
+        hud.hearts.appendChild(createHudIcon(filled ? ART.hud.heart : ART.hud.heartEmpty, "icon heart", filled ? 1 : 0.75));
       }
       hud.heartsValue.textContent = `${game.hearts}/3`;
       hud.runes.innerHTML = "";
       for (let i = 0; i < 3; i += 1) {
-        const el = document.createElement("div");
-        el.className = "icon rune";
-        el.style.opacity = i < game.inventory.runes ? "1" : "0.25";
-        el.textContent = "*";
-        hud.runes.appendChild(el);
+        hud.runes.appendChild(createHudIcon(ART.pickups.rune, "icon rune", i < game.inventory.runes ? 1 : 0.25));
       }
       hud.runesValue.textContent = `${game.inventory.runes}/3`;
       hud.key.innerHTML = "";
-      const keyEl = document.createElement("div");
-      keyEl.className = "icon key";
-      keyEl.style.opacity = game.inventory.key ? "1" : "0.25";
-      keyEl.textContent = "K";
+      const keyEl = createHudIcon(ART.hud.key, "icon key", game.inventory.key ? 1 : 0.25);
       hud.key.appendChild(keyEl);
       hud.keyValue.textContent = game.inventory.key ? "Yes" : "No";
       hud.wand.innerHTML = "";
-      const wandEl = document.createElement("div");
-      wandEl.className = "icon wand";
-      wandEl.style.opacity = game.inventory.wand ? "1" : "0.25";
-      wandEl.textContent = "W";
+      const wandEl = createHudIcon(ART.pickups.wand, "icon wand", game.inventory.wand ? 1 : 0.25);
       hud.wand.appendChild(wandEl);
       hud.wandValue.textContent = game.inventory.wand ? "Yes" : "No";
       hud.pet.innerHTML = "";
-      const petEl = document.createElement("div");
-      petEl.className = "icon pet";
-      petEl.style.opacity = game.pet ? "1" : "0.25";
-      petEl.textContent = game.pet ? "P" : "-";
+      const petEl = createHudIcon(ART.hud.pet, "icon pet", game.pet ? 1 : 0.25);
       hud.pet.appendChild(petEl);
       hud.petValue.textContent = game.pet ? PETS[game.pet].name : "None";
+    }
+
+    function spawnFx(options) {
+      const burst = options || {};
+      const count = burst.count || 10;
+      const spread = burst.spread || 1;
+      const baseVy = burst.vy || -90;
+      for (let i = 0; i < count; i += 1) {
+        const angle = (Math.PI * 2 * i) / count;
+        const speed = 40 + Math.random() * 90 * spread;
+        game.fx.push({
+          x: burst.x,
+          y: burst.y,
+          vx: Math.cos(angle) * speed * 0.4,
+          vy: baseVy + Math.sin(angle) * speed * 0.25,
+          life: burst.life || 0.75,
+          maxLife: burst.life || 0.75,
+          color: burst.color || "#ffe38f",
+          radius: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function updateFx(dt) {
+      game.fx = game.fx.map(fx => {
+        fx.life -= dt;
+        fx.x += fx.vx * dt;
+        fx.y += fx.vy * dt;
+        fx.vy += 220 * dt;
+        return fx;
+      }).filter(fx => fx.life > 0);
+    }
+
+    function drawFx(cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      game.fx.forEach(fx => {
+        const alpha = fx.life / fx.maxLife;
+        ctx.fillStyle = hexToRgba(fx.color, alpha);
+        ctx.beginPath();
+        ctx.arc(fx.x, fx.y, fx.radius * alpha + 1, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function hexToRgba(hex, alpha) {
+      const normalized = hex.replace("#", "");
+      const value = normalized.length === 3
+        ? normalized.split("").map(part => part + part).join("")
+        : normalized;
+      const int = parseInt(value, 16);
+      const r = (int >> 16) & 255;
+      const g = (int >> 8) & 255;
+      const b = int & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function loadImage(src) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function loadAssetGroup(group, target) {
+      const entries = Object.entries(group);
+      const loaded = await Promise.all(entries.map(async ([key, src]) => [key, await loadImage(src)]));
+      loaded.forEach(([key, img]) => {
+        target[key] = img;
+      });
+    }
+
+    async function preloadArt() {
+      ART.backgrounds = {};
+      ART.player = {};
+      ART.pickups = {};
+      ART.hud = {};
+      ART.props = {};
+      ART.enemies = {};
+      await Promise.all([
+        loadAssetGroup(SPRITES.backgrounds, ART.backgrounds),
+        loadAssetGroup(SPRITES.player, ART.player),
+        loadAssetGroup(SPRITES.pickups, ART.pickups),
+        loadAssetGroup(SPRITES.hud, ART.hud),
+        loadAssetGroup(SPRITES.props, ART.props),
+        loadAssetGroup(SPRITES.enemies, ART.enemies)
+      ]);
+    }
+
+    function drawImageFit(img, x, y, w, h) {
+      if (!img) return false;
+      ctx.drawImage(img, x, y, w, h);
+      return true;
+    }
+
+    function tileImageX(img, x, y, w, h, tileW, tileH) {
+      if (!img) return false;
+      const stepX = tileW || img.width;
+      const stepY = tileH || img.height;
+      for (let px = x; px < x + w; px += stepX) {
+        for (let py = y; py < y + h; py += stepY) {
+          ctx.drawImage(img, px, py, Math.min(stepX, x + w - px), Math.min(stepY, y + h - py));
+        }
+      }
+      return true;
+    }
+
+    function createHudIcon(img, className, opacity) {
+      const el = document.createElement("div");
+      el.className = className;
+      el.style.opacity = `${opacity ?? 1}`;
+      if (img) {
+        el.style.backgroundImage = `url("${img.src}")`;
+      }
+      return el;
     }
 
     function showDialog(title, body) {
@@ -626,24 +1129,72 @@
       }
     }
 
-    function showQuiz(question, choices, onResult) {
+    function speakSpellingRound(round) {
+      if (!round || !("speechSynthesis" in window)) return false;
+      const synth = window.speechSynthesis;
+      try {
+        synth.cancel();
+        const utter = new SpeechSynthesisUtterance(`${round.word}. ${round.sentence}. ${round.word}.`);
+        utter.lang = "en-US";
+        utter.rate = 0.84;
+        utter.pitch = 1;
+        const voices = synth.getVoices();
+        const preferred = voices.find(voice => voice.lang === "en-US") || voices.find(voice => voice.lang && voice.lang.startsWith("en"));
+        if (preferred) {
+          utter.voice = preferred;
+        }
+        synth.speak(utter);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function setQuizHint(text) {
+      overlays.quizHint.textContent = text || "";
+    }
+
+    function normalizeSpelling(text) {
+      return (text || "").trim().toLowerCase().replace(/[^a-z]/g, "");
+    }
+
+    function getRoundHint(round) {
+      if (!round || !round.hints || round.hints.length === 0) {
+        return "Replay the word and try again.";
+      }
+      const index = Math.min(round.attempts - 1, round.hints.length - 1);
+      return `Hint: ${round.hints[index]}`;
+    }
+
+    function submitQuizGuess() {
+      if (!game.quizActive || !game.quizHandler) return;
+      game.quizHandler(overlays.quizInput.value);
+    }
+
+    function showQuiz(round, title, onResult) {
       game.quizActive = true;
-      overlays.quizBody.textContent = question;
-      overlays.quizChoices.innerHTML = "";
-      choices.forEach((choice, idx) => {
-        const el = document.createElement("div");
-        el.className = "choice";
-        el.innerHTML = `<span class="badge">${idx + 1}</span><span>${choice}</span>`;
-        el.addEventListener("click", () => onResult(idx));
-        overlays.quizChoices.appendChild(el);
-      });
-      overlays.quiz.style.display = "grid";
+      game.quizRound = round;
       game.quizHandler = onResult;
+      overlays.quizTitle.textContent = title || "Spelling Gate";
+      overlays.quizBody.innerHTML = `<strong>Definition:</strong> ${round.definition}<br><strong>Sentence:</strong> ${round.displaySentence}`;
+      overlays.quizMeta.textContent = `${round.word.length} letters`;
+      overlays.quizInput.value = "";
+      const spoke = speakSpellingRound(round);
+      setQuizHint(spoke ? "Listen to the word, then type the spelling." : "Audio is unavailable here. Use the definition, sentence, and hints.");
+      overlays.quiz.style.display = "grid";
+      requestAnimationFrame(() => overlays.quizInput.focus());
     }
 
     function closeQuiz() {
       game.quizActive = false;
+      game.quizHandler = null;
+      game.quizRound = null;
+      overlays.quizInput.value = "";
+      setQuizHint("");
       overlays.quiz.style.display = "none";
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
     }
 
     function saveGame() {
@@ -695,6 +1246,7 @@
         game.pupPos.x = game.player.x - 40;
         game.pupPos.y = game.player.y + 20;
       }
+      setPrompt("Adventure resumed. Keep heading right.");
       return true;
     }
 
@@ -710,6 +1262,12 @@
       if (SCENES["Lodge Lobby"].petSpot) {
         SCENES["Lodge Lobby"].petSpot.prompted = false;
       }
+      ["Water Park", "Forest Trail", "Magi Tower"].forEach(name => {
+        const scene = SCENES[name];
+        scene.enemies && scene.enemies.forEach(enemy => enemy.defeated = false);
+        scene.checkpoints && scene.checkpoints.forEach(check => check.active = false);
+      });
+      game.fx = [];
       enterScene("Lodge Lobby", { x: 100, y: 400 });
     }
 
@@ -737,52 +1295,52 @@
         queueDialog("Tower Gate", "You need the Wand to attempt the gate.");
         return;
       }
-      const quiz = createGateQuiz(gate.id);
-      showQuiz(quiz.question, quiz.choices, idx => {
-        if (idx === quiz.answer) {
-          game.gateStates[gate.id] = true;
-          closeQuiz();
-          queueDialog("Gate Opened", "Great work! The gate unlocks.");
-          saveGame();
-        } else {
-          queueDialog("Try Again", "Not quite. Pick another answer.");
-        }
-      });
+      const rounds = createGateQuiz(gate.id);
+      let roundIndex = 0;
+
+      const askRound = () => {
+        const round = rounds[roundIndex];
+        showQuiz(round, `${gate.label} ${roundIndex + 1}/${rounds.length}`, guess => {
+          const answer = normalizeSpelling(guess);
+          if (!answer) {
+            setQuizHint("Type the spelling before you submit.");
+            return;
+          }
+          if (answer === round.word) {
+            roundIndex += 1;
+            if (roundIndex >= rounds.length) {
+              game.gateStates[gate.id] = true;
+              closeQuiz();
+              spawnFx({ x: gate.x + gate.w / 2, y: gate.y + 30, color: "#ffe18d", count: 16, spread: 1.6, life: 0.95 });
+              queueDialog("Gate Opened", "Great work! You finished the spelling words and the gate unlocks.");
+              setPrompt("Nice spelling. Head through the gate.");
+              saveGame();
+              return;
+            }
+            askRound();
+            return;
+          }
+
+          round.attempts += 1;
+          setQuizHint(getRoundHint(round));
+          setPrompt("Try again. Replay the word if needed.");
+        });
+      };
+
+      askRound();
     }
 
     function createGateQuiz(id) {
-      if (id === "lobby") {
-        const a = 2 + Math.floor(Math.random() * 5);
-        const b = 2 + Math.floor(Math.random() * 5);
-        const answer = a + b;
-        const choices = shuffle([answer, answer + 1, answer - 1, answer + 2]);
+      return SPELLING_GATES[id].map(entry => {
         return {
-          question: `Addition gate: ${a} + ${b} = ?`,
-          choices: choices.map(n => `${n}`),
-          answer: choices.indexOf(answer)
+          word: entry.word,
+          definition: entry.definition,
+          sentence: entry.sentence,
+          displaySentence: entry.displaySentence,
+          hints: entry.hints.slice(),
+          attempts: 0
         };
-      }
-      if (id === "water") {
-        const a = 5 + Math.floor(Math.random() * 6);
-        const b = 1 + Math.floor(Math.random() * 10);
-        const op = Math.random() > 0.5 ? "+" : "-";
-        const answer = op === "+" ? a + b : a - b;
-        const choices = shuffle([answer, answer + 2, answer - 2, answer + 4]);
-        return {
-          question: `Water gate: ${a} ${op} ${b} = ?`,
-          choices: choices.map(n => `${n}`),
-          answer: choices.indexOf(answer)
-        };
-      }
-      const a = 2 + Math.floor(Math.random() * 4);
-      const b = 2 + Math.floor(Math.random() * 4);
-      const answer = a * b;
-      const choices = shuffle([answer, answer + b, answer - 2, answer + 4]);
-      return {
-        question: `Tower gate: ${a} x ${b} = ?`,
-        choices: choices.map(n => `${n}`),
-        answer: choices.indexOf(answer)
-      };
+      });
     }
 
     function shuffle(items) {
@@ -806,14 +1364,18 @@
       }
       if (name === "Victory") {
         overlays.victory.style.display = "grid";
+        spawnFx({ x: 512, y: 180, color: "#ffe18d", count: 28, spread: 2, life: 1.2 });
+        setPrompt("Adventure complete. Tap Play Again for another run.");
       } else {
         overlays.victory.style.display = "none";
+        setPrompt(`Entered ${name}.`);
       }
       setHUD();
     }
     function update(dt) {
       const scene = getScene();
       const player = game.player;
+      updateFx(dt);
       const graceBase = 0.1 + (game.pet ? PETS[game.pet].graceBonus : 0);
       if (game.invuln > 0) {
         game.invuln = Math.max(0, game.invuln - dt);
@@ -826,12 +1388,15 @@
       if (axis < -0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
       if (axis > 0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
       if (Math.abs(axis) <= 0.05) player.vx *= 0.85;
+      if (axis < -0.05) game.facing = -1;
+      if (axis > 0.05) game.facing = 1;
 
       if (player.jumpBuffer > 0 && player.coyote > 0) {
         player.vy = -player.jumpPower;
         player.coyote = 0;
         player.jumpBuffer = 0;
         player.onGround = false;
+        spawnFx({ x: player.x + player.w / 2, y: player.y + player.h, color: "#fff3cf", count: 5, spread: 0.5, life: 0.35, vy: -40 });
       }
 
       player.vy += player.gravity * dt;
@@ -866,6 +1431,7 @@
             if (player.vy > 120 && playerBottom < enemyTop + 12) {
               enemy.defeated = true;
               player.vy = -player.jumpPower * 0.6;
+              spawnFx({ x: enemy.x + enemy.w / 2, y: enemy.y + enemy.h / 2, color: "#ffb6a0", count: 10, spread: 1.2, life: 0.55 });
               quickDialog("Stomp!", "Enemy cleared.", 600);
             } else {
               takeDamage(enemy.x + enemy.w / 2);
@@ -885,7 +1451,8 @@
         if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
           rune.collected = true;
           game.inventory.runes += 1;
-          // No dialog on rune pickup to keep flow smooth.
+          spawnFx({ x: rune.x + 12, y: rune.y + 12, color: "#88b8ff", count: 14, spread: 1.4, life: 0.75 });
+          setPrompt(`Rune found. ${game.inventory.runes} of 3 collected.`);
           saveGame();
         }
       });
@@ -893,6 +1460,8 @@
       if (scene.keyItem && !scene.keyItem.collected && rectsOverlap(player, { x: scene.keyItem.x, y: scene.keyItem.y, w: 26, h: 26 })) {
         scene.keyItem.collected = true;
         game.inventory.key = true;
+        spawnFx({ x: scene.keyItem.x + 12, y: scene.keyItem.y + 10, color: "#ffd45c", count: 16, spread: 1.5, life: 0.8 });
+        setPrompt("Golden Key collected. Head for the gate.");
         quickDialog("Golden Key", "You found the Golden Key.");
         saveGame();
       }
@@ -900,6 +1469,8 @@
       if (scene.wandItem && !scene.wandItem.collected && rectsOverlap(player, { x: scene.wandItem.x, y: scene.wandItem.y, w: 26, h: 26 })) {
         scene.wandItem.collected = true;
         game.inventory.wand = true;
+        spawnFx({ x: scene.wandItem.x + 14, y: scene.wandItem.y + 8, color: "#d59bff", count: 18, spread: 1.7, life: 0.9 });
+        setPrompt("Tower Wand collected. The final gate is ready.");
         quickDialog("Tower Wand", "The wand hums with energy.");
         saveGame();
       }
@@ -907,6 +1478,11 @@
       if (scene.checkpoints) {
         scene.checkpoints.forEach(check => {
           if (rectsOverlap(player, check)) {
+            if (!check.active) {
+              check.active = true;
+              spawnFx({ x: check.x + check.w / 2, y: check.y + 10, color: "#fff2a8", count: 10, spread: 1, life: 0.65 });
+              setPrompt("Checkpoint reached. You are safe here.");
+            }
             game.lastCheckpoint = { scene: game.scene, x: check.x, y: check.y - 20 };
             saveGame();
           }
@@ -924,8 +1500,31 @@
         }
       });
 
+      updateContextPrompt(scene, player);
+
       const camTargetX = clamp(player.x - canvas.width / 2 + player.w / 2, 0, scene.width - canvas.width);
       game.camera.x += (camTargetX - game.camera.x) * 0.08;
+    }
+
+    function updateContextPrompt(scene, player) {
+      const interact = getInteractRect(player);
+      let prompt = "";
+      if (scene.petSpot && !game.pet && rectsOverlap(interact, scene.petSpot)) {
+        prompt = "Press E to befriend Pine Pup.";
+      } else if (scene.gates && scene.gates.some(gate => rectsOverlap(interact, gate) && !game.gateStates[gate.id])) {
+        prompt = "Press E to try the gate challenge.";
+      } else if (scene.dialogs && scene.dialogs.some(dialog => rectsOverlap(interact, dialog))) {
+        prompt = "Press E to talk.";
+      } else if (game.scene === "Lodge Lobby") {
+        prompt = "Find the glowing runes and head right.";
+      } else if (game.scene === "Water Park") {
+        prompt = game.inventory.key ? "Gate is open on the far right." : "Bounce across the park and grab the key.";
+      } else if (game.scene === "Forest Trail") {
+        prompt = "Touch the fluttering banners to save progress.";
+      } else if (game.scene === "Magi Tower") {
+        prompt = game.inventory.wand ? "Take the final spelling test at the tower gate." : "Climb higher to reach the wand.";
+      }
+      setPrompt(prompt);
     }
 
     function resolveCollisions(player, solids, horizontal) {
@@ -967,12 +1566,16 @@
       if (game.pet && game.pupShield) {
         game.pupShield = false;
         game.invuln = 0.9;
+        spawnFx({ x: game.pupPos.x + 16, y: game.pupPos.y + 16, color: "#fff0aa", count: 12, spread: 1.5, life: 0.7 });
+        setPrompt("Pine Pup protected you from that hit.");
         return;
       }
 
       game.hearts -= 1;
       setHUD();
       game.invuln = game.pet ? 1.1 : 0.7;
+      spawnFx({ x: game.player.x + game.player.w / 2, y: game.player.y + game.player.h / 2, color: "#ff8f8f", count: 12, spread: 1.2, life: 0.65 });
+      setPrompt(`Ouch. ${game.hearts} hearts left.`);
 
       if (game.player) {
         const dir = (sourceX !== undefined && game.player.x < sourceX) ? -1 : 1;
@@ -993,6 +1596,7 @@
 
       const cam = game.camera;
       drawBackdrop(scene, cam);
+      drawGroundDecor(scene, cam);
 
       (scene.platforms || []).forEach(platform => drawPlatform(platform, cam));
 
@@ -1021,9 +1625,11 @@
       if (game.pet) {
         drawPup(game.pupPos, cam, game.pupShield);
       }
+      drawFx(cam);
 
       if (game.player) {
-      drawPlayer(game.player, cam);
+        drawPlayer(game.player, cam);
+      }
     }
 
     function drawBackdrop(scene, cam) {
@@ -1035,22 +1641,50 @@
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      const theme = scene.name === "Magi Tower"
+        ? "desert"
+        : scene.name === "Water Park"
+          ? "hills"
+          : scene.name === "Forest Trail"
+            ? "trees"
+            : scene.name === "Lodge Lobby"
+              ? "trees"
+              : "mushrooms";
+
+      drawParallaxLayer(ART.backgrounds.clouds, cam.x * 0.08, 44, 1.08);
+      drawParallaxLayer(ART.backgrounds[theme], cam.x * 0.18, 108, 1.02);
+
       drawSunsetGlow();
       drawFarMountains(cam);
       drawMidHills(cam);
       drawClouds(cam);
+      drawSparkles(scene, cam);
 
       if (scene.name === "Forest Trail") {
         drawForestSilhouette(cam);
+        drawForestLanterns(cam);
       }
       if (scene.name === "Water Park") {
         drawWaterShimmer(cam);
+        drawWaterSlides(cam);
       }
       if (scene.name === "Magi Tower") {
         drawTowerAura(cam);
+        drawTowerSpire(cam);
       }
       if (scene.name === "Lodge Lobby") {
         drawLodgeBanner(cam);
+        drawLodgeFacade(cam);
+      }
+    }
+
+    function drawParallaxLayer(img, offsetX, y, scale) {
+      if (!img) return;
+      const drawH = img.height * (scale || 1);
+      const drawW = img.width * (scale || 1);
+      const start = -((offsetX % drawW) + drawW);
+      for (let x = start; x < canvas.width + drawW; x += drawW) {
+        ctx.drawImage(img, x, y, drawW, drawH);
       }
     }
 
@@ -1119,6 +1753,22 @@
       ctx.restore();
     }
 
+    function drawSparkles(scene, cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.18, 0);
+      const time = Date.now() / 700;
+      const color = scene.name === "Magi Tower" ? "rgba(255, 233, 170, 0.55)" : "rgba(255, 255, 255, 0.35)";
+      ctx.fillStyle = color;
+      for (let i = 0; i < 12; i += 1) {
+        const x = 70 + i * 110;
+        const y = 100 + Math.sin(time + i) * 14 + (i % 3) * 18;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.8 + (i % 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     function drawForestSilhouette(cam) {
       ctx.save();
       ctx.translate(-cam.x * 0.4, 0);
@@ -1130,6 +1780,25 @@
         ctx.lineTo(x + 50, 420);
         ctx.lineTo(x + 90, 520);
         ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawForestLanterns(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.55, 0);
+      const time = Date.now() / 380;
+      for (let i = 0; i < 8; i += 1) {
+        const x = 120 + i * 180;
+        const y = 180 + (i % 2) * 28 + Math.sin(time + i) * 8;
+        ctx.fillStyle = "rgba(255, 235, 146, 0.7)";
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 235, 146, 0.14)";
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -1149,6 +1818,24 @@
       ctx.restore();
     }
 
+    function drawWaterSlides(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.4, 0);
+      ctx.lineWidth = 18;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255, 140, 120, 0.32)";
+      ctx.beginPath();
+      ctx.moveTo(1080, 180);
+      ctx.bezierCurveTo(1160, 130, 1280, 190, 1360, 280);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255, 228, 140, 0.28)";
+      ctx.beginPath();
+      ctx.moveTo(1160, 160);
+      ctx.bezierCurveTo(1230, 120, 1360, 180, 1450, 280);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function drawTowerAura(cam) {
       ctx.save();
       ctx.translate(-cam.x * 0.3, 0);
@@ -1157,6 +1844,22 @@
       glow.addColorStop(1, "rgba(210, 170, 255, 0)");
       ctx.fillStyle = glow;
       ctx.fillRect(700, 120, 400, 320);
+      ctx.restore();
+    }
+
+    function drawTowerSpire(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.5, 0);
+      ctx.fillStyle = "rgba(52, 43, 89, 0.38)";
+      ctx.fillRect(1110, 160, 120, 250);
+      ctx.beginPath();
+      ctx.moveTo(1080, 160);
+      ctx.lineTo(1170, 70);
+      ctx.lineTo(1260, 160);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(255, 229, 168, 0.7)";
+      ctx.fillRect(1158, 220, 24, 42);
       ctx.restore();
     }
 
@@ -1170,39 +1873,76 @@
       ctx.fillText("Lodge of Runes", 280, 232);
       ctx.restore();
     }
+
+    function drawLodgeFacade(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.42, 0);
+      ctx.fillStyle = "rgba(86, 60, 40, 0.32)";
+      ctx.fillRect(80, 250, 240, 160);
+      ctx.fillStyle = "rgba(255, 220, 145, 0.24)";
+      for (let i = 0; i < 3; i += 1) {
+        ctx.fillRect(110 + i * 66, 284, 34, 50);
+      }
+      ctx.restore();
     }
+
+    function drawGroundDecor(scene, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const groundY = scene.height - 76;
+      const torch = (Math.floor(Date.now() / 180) % 2 === 0) ? ART.props.torchA : ART.props.torchB;
+      if (scene.name === "Lodge Lobby") {
+        for (let i = 0; i < 6; i += 1) {
+          const x = 150 + i * 250;
+          drawImageFit(ART.props.signRight, x, groundY - 46, 34, 34);
+          drawImageFit(torch, x + 44, groundY - 58, 20, 32);
+          drawImageFit(ART.props.rock, x + 76, groundY - 14, 28, 18);
+        }
+      } else if (scene.name === "Forest Trail") {
+        for (let i = 0; i < 10; i += 1) {
+          const x = 90 + i * 160;
+          drawImageFit(ART.props.bush, x, groundY - 30, 40, 28);
+          drawImageFit(ART.props.mushroom, x + 34, groundY - 18, 18, 18);
+          if (i % 2 === 0) {
+            drawImageFit(ART.props.rock, x + 64, groundY - 12, 24, 16);
+          }
+        }
+      } else if (scene.name === "Water Park") {
+        for (let i = 0; i < 7; i += 1) {
+          const x = 130 + i * 220;
+          drawImageFit(ART.props.rock, x, groundY - 12, 28, 18);
+          drawImageFit(ART.props.signRight, x + 34, groundY - 40, 28, 28);
+          drawImageFit(ART.props.bush, x + 70, groundY - 28, 34, 24);
+        }
+      } else if (scene.name === "Magi Tower") {
+        for (let i = 0; i < 8; i += 1) {
+          const x = 140 + i * 180;
+          drawImageFit(torch, x, groundY - 58, 20, 32);
+          drawImageFit(ART.props.stone, x + 24, groundY - 24, 36, 24);
+          if (i % 2 === 0) {
+            drawImageFit(ART.props.checkpointA, x + 64, groundY - 46, 26, 34);
+          }
+        }
+      }
+      ctx.restore();
+    }
+
     function drawPlatform(platform, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
       if (platform.type === "ground") {
-        const g = ctx.createLinearGradient(0, platform.y, 0, platform.y + platform.h);
-        g.addColorStop(0, "#4f6a44");
-        g.addColorStop(1, "#2f4b34");
-        ctx.fillStyle = g;
+        ctx.fillStyle = "#6ca061";
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.fillStyle = "rgba(27, 46, 30, 0.7)";
-        for (let i = 0; i < platform.w; i += 40) {
-          ctx.fillRect(platform.x + i, platform.y, 20, 10);
-        }
+        tileImageX(ART.props.grass, platform.x, platform.y - 10, platform.w, 24, 32, 24);
+        tileImageX(ART.props.rock, platform.x, platform.y + 18, platform.w, Math.max(platform.h - 18, 20), 32, 32);
       } else if (platform.type === "wood") {
-        ctx.fillStyle = "#a56634";
+        ctx.fillStyle = "#8f5f38";
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.strokeStyle = "#6a3b1d";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.strokeStyle = "rgba(255, 222, 180, 0.3)";
-        for (let x = platform.x + 10; x < platform.x + platform.w; x += 40) {
-          ctx.beginPath();
-          ctx.moveTo(x, platform.y + 4);
-          ctx.lineTo(x + 20, platform.y + platform.h - 4);
-          ctx.stroke();
-        }
+        tileImageX(ART.props.plank, platform.x, platform.y, platform.w, platform.h, 32, 32);
       } else {
-        ctx.fillStyle = "#808999";
+        ctx.fillStyle = "#8995aa";
         ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-        ctx.strokeStyle = "#4a4f5d";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
+        tileImageX(ART.props.stone, platform.x, platform.y, platform.w, platform.h, 32, 32);
       }
       ctx.restore();
     }
@@ -1210,131 +1950,141 @@
     function drawGate(gate, cam, open) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = open ? "rgba(255,255,255,0.15)" : "#4d2b64";
-      ctx.fillRect(gate.x, gate.y, gate.w, gate.h);
-      ctx.strokeStyle = open ? "#9ad0ff" : "#f1d07a";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(gate.x, gate.y, gate.w, gate.h);
+      const body = open ? ART.props.gateOpen : ART.props.gateClosed;
+      const top = open ? ART.props.gateOpenTop : ART.props.gateClosedTop;
+      drawImageFit(body, gate.x, gate.y + 28, gate.w, gate.h - 28);
+      drawImageFit(top, gate.x, gate.y, gate.w, 34);
       ctx.fillStyle = "#fff";
       ctx.font = "12px Trebuchet MS";
       ctx.fillText(gate.label, gate.x - 10, gate.y - 8);
-      ctx.fillStyle = open ? "rgba(255,255,255,0.2)" : "rgba(255,220,140,0.5)";
-      ctx.beginPath();
-      ctx.arc(gate.x + gate.w / 2, gate.y + 22, 8, 0, Math.PI * 2);
-      ctx.fill();
       ctx.restore();
     }
 
     function drawRune(rune, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      const glow = ctx.createRadialGradient(rune.x + 12, rune.y + 12, 4, rune.x + 12, rune.y + 12, 18);
+      const bob = Math.sin(Date.now() / 180 + rune.x * 0.02) * 4;
+      const glow = ctx.createRadialGradient(rune.x + 14, rune.y + 14 + bob, 4, rune.x + 14, rune.y + 14 + bob, 20);
       glow.addColorStop(0, "rgba(210, 230, 255, 0.9)");
       glow.addColorStop(1, "rgba(122, 168, 255, 0.2)");
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(rune.x + 12, rune.y + 12, 12, 0, Math.PI * 2);
+      ctx.arc(rune.x + 14, rune.y + 14 + bob, 14, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#f0f7ff";
-      ctx.fillRect(rune.x + 9, rune.y + 6, 6, 12);
+      drawImageFit(ART.pickups.rune, rune.x, rune.y + bob, 28, 28);
       ctx.restore();
     }
 
     function drawKey(key, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#f4c04b";
-      ctx.fillRect(key.x, key.y, 24, 10);
-      ctx.fillRect(key.x + 8, key.y - 8, 8, 8);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-      ctx.fillRect(key.x + 4, key.y + 2, 8, 2);
+      const bob = Math.sin(Date.now() / 210 + key.x * 0.02) * 4;
+      drawImageFit(ART.pickups.key, key.x - 2, key.y - 2 + bob, 30, 30);
       ctx.restore();
     }
 
     function drawWand(wand, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.strokeStyle = "#c07bff";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(wand.x, wand.y + 20);
-      ctx.lineTo(wand.x + 20, wand.y);
-      ctx.stroke();
-      ctx.fillStyle = "#fff0b8";
-      ctx.beginPath();
-      ctx.arc(wand.x + 22, wand.y - 2, 6, 0, Math.PI * 2);
-      ctx.fill();
+      const bob = Math.sin(Date.now() / 200 + wand.x * 0.018) * 5;
+      drawImageFit(ART.pickups.wand, wand.x - 4, wand.y - 6 + bob, 34, 34);
       ctx.restore();
     }
 
     function drawCheckpoint(check, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
-      ctx.fillRect(check.x, check.y, check.w, check.h);
-      ctx.strokeStyle = "#fff";
-      ctx.strokeRect(check.x, check.y, check.w, check.h);
+      const flag = (Math.floor(Date.now() / 220) % 2 === 0) ? ART.props.checkpointA : ART.props.checkpointB;
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.fillRect(check.x + 18, check.y + 6, 6, check.h - 6);
+      drawImageFit(flag, check.x + 10, check.y + 4, 28, 28);
       ctx.restore();
     }
 
     function drawPet(spot, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 220 + spot.x * 0.03) * 2;
       ctx.fillStyle = "#59c29a";
       ctx.beginPath();
-      ctx.arc(spot.x + 30, spot.y + 30, 16, 0, Math.PI * 2);
+      ctx.arc(spot.x + 30, spot.y + 30 + bob, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(spot.x + 18, spot.y + 20 + bob);
+      ctx.lineTo(spot.x + 25, spot.y + 8 + bob);
+      ctx.lineTo(spot.x + 31, spot.y + 20 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(spot.x + 29, spot.y + 20 + bob);
+      ctx.lineTo(spot.x + 36, spot.y + 8 + bob);
+      ctx.lineTo(spot.x + 42, spot.y + 20 + bob);
+      ctx.closePath();
       ctx.fill();
       ctx.fillStyle = "#1a3b2f";
-      ctx.fillRect(spot.x + 20, spot.y + 26, 6, 6);
-      ctx.fillRect(spot.x + 34, spot.y + 26, 6, 6);
+      ctx.fillRect(spot.x + 20, spot.y + 26 + bob, 6, 6);
+      ctx.fillRect(spot.x + 34, spot.y + 26 + bob, 6, 6);
       ctx.fillStyle = "#f8f1d0";
-      ctx.fillRect(spot.x + 26, spot.y + 38, 8, 4);
+      ctx.fillRect(spot.x + 26, spot.y + 38 + bob, 8, 4);
+      ctx.strokeStyle = "rgba(255, 240, 180, 0.4)";
+      ctx.beginPath();
+      ctx.arc(spot.x + 30, spot.y + 30 + bob, 24, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
 
     function drawHazard(hazard, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#ff6b6b";
-      ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.fillRect(hazard.x + 6, hazard.y + 4, hazard.w - 12, 3);
+      const spin = ART.props.spikes;
+      drawImageFit(spin, hazard.x, hazard.y - 6, hazard.w, hazard.w);
       ctx.restore();
     }
 
     function drawEnemy(enemy, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#3c2b3a";
-      ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
-      ctx.fillStyle = "#f0b17c";
-      ctx.fillRect(enemy.x + 6, enemy.y + 8, enemy.w - 12, 8);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(enemy.x + 8, enemy.y + 12, 4, 4);
-      ctx.fillRect(enemy.x + enemy.w - 12, enemy.y + 12, 4, 4);
-      ctx.fillStyle = "#c65757";
-      ctx.fillRect(enemy.x + 6, enemy.y + enemy.h - 6, enemy.w - 12, 4);
+      const isWater = game.scene === "Water Park";
+      const isForest = game.scene === "Forest Trail";
+      const frame = Math.floor(Date.now() / 180) % 2 === 0
+        ? (isWater ? ART.enemies.waterA : isForest ? ART.enemies.forestA : ART.enemies.towerA)
+        : (isWater ? ART.enemies.waterB : isForest ? ART.enemies.forestB : ART.enemies.towerB);
+      drawImageFit(frame, enemy.x - 2, enemy.y - 2, enemy.w + 4, enemy.h + 4);
       ctx.restore();
     }
 
     function drawPup(pup, cam, shielding) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 180) * 1.5;
       ctx.fillStyle = "#4aa982";
       ctx.beginPath();
-      ctx.arc(pup.x + 16, pup.y + 16, 14, 0, Math.PI * 2);
+      ctx.arc(pup.x + 16, pup.y + 16 + bob, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(pup.x + 6, pup.y + 10 + bob);
+      ctx.lineTo(pup.x + 12, pup.y - 2 + bob);
+      ctx.lineTo(pup.x + 16, pup.y + 10 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(pup.x + 16, pup.y + 10 + bob);
+      ctx.lineTo(pup.x + 22, pup.y - 2 + bob);
+      ctx.lineTo(pup.x + 26, pup.y + 10 + bob);
+      ctx.closePath();
       ctx.fill();
       ctx.fillStyle = "#1a3b2f";
-      ctx.fillRect(pup.x + 10, pup.y + 14, 4, 4);
-      ctx.fillRect(pup.x + 20, pup.y + 14, 4, 4);
+      ctx.fillRect(pup.x + 10, pup.y + 14 + bob, 4, 4);
+      ctx.fillRect(pup.x + 20, pup.y + 14 + bob, 4, 4);
       ctx.fillStyle = "#f8f1d0";
-      ctx.fillRect(pup.x + 13, pup.y + 22, 6, 3);
+      ctx.fillRect(pup.x + 13, pup.y + 22 + bob, 6, 3);
+      ctx.fillRect(pup.x + 26, pup.y + 20 + bob, 8, 3);
       if (shielding) {
         const pulse = 0.6 + Math.sin(Date.now() / 180) * 0.2;
         ctx.strokeStyle = `rgba(255, 230, 160, ${pulse})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(pup.x + 16, pup.y + 16, 24, 0, Math.PI * 2);
+        ctx.arc(pup.x + 16, pup.y + 16 + bob, 24, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.restore();
@@ -1343,24 +2093,17 @@
     function drawPlayer(player, cam) {
       ctx.save();
       ctx.translate(-cam.x, -cam.y);
-      ctx.fillStyle = "#2c2a40";
-      ctx.fillRect(player.x + 6, player.y + 18, player.w - 12, player.h - 18);
-      ctx.fillStyle = "#6a3b1d";
-      ctx.fillRect(player.x + 4, player.y + 26, player.w - 8, player.h - 26);
-      ctx.fillStyle = "#3b2f5c";
-      ctx.beginPath();
-      ctx.moveTo(player.x, player.y + 24);
-      ctx.lineTo(player.x + player.w / 2, player.y + player.h);
-      ctx.lineTo(player.x + player.w, player.y + 24);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#f4d3b3";
-      ctx.fillRect(player.x + 8, player.y + 6, player.w - 16, 16);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(player.x + 12, player.y + 12, 4, 4);
-      ctx.fillRect(player.x + 20, player.y + 12, 4, 4);
-      ctx.fillStyle = "#f5c542";
-      ctx.fillRect(player.x + player.w - 6, player.y + 18, 3, 20);
+      const bounce = player.onGround ? Math.sin(Date.now() / 110) * Math.min(2, Math.abs(player.vx) * 0.01) : 0;
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2 + bounce);
+      ctx.scale(game.facing, 1);
+      ctx.translate(-(player.x + player.w / 2), -(player.y + player.h / 2));
+      const moving = Math.abs(player.vx) > 24;
+      const frame = !player.onGround
+        ? ART.player.jump
+        : moving
+          ? (Math.floor(Date.now() / 120) % 2 === 0 ? ART.player.walkA : ART.player.walkB)
+          : ART.player.idle;
+      drawImageFit(frame, player.x - 8, player.y - 10, 52, 64);
       ctx.restore();
     }
 
@@ -1419,7 +2162,8 @@
       requestAnimationFrame(tick);
     }
 
-    function init() {
+    async function init() {
+      await preloadArt();
       if (shouldEnableTouchControls()) {
         touchControls.style.display = "block";
       }
@@ -1465,9 +2209,13 @@
             handleInteraction();
           }
         }
-        if (game.quizActive && ["1", "2", "3", "4"].includes(key)) {
-          const idx = Number(key) - 1;
-          if (game.quizHandler) game.quizHandler(idx);
+        if (game.quizActive && key === "Enter") {
+          submitQuizGuess();
+        }
+        if (game.quizActive && (key === "r" || key === "R")) {
+          if (game.quizRound && !speakSpellingRound(game.quizRound)) {
+            setQuizHint("Audio is unavailable here. Keep using the sentence and hints.");
+          }
         }
       });
 
@@ -1488,6 +2236,20 @@
           nextDialog();
         }
       }, { passive: false });
+      overlays.quizHear.addEventListener("click", () => {
+        if (game.quizRound && !speakSpellingRound(game.quizRound)) {
+          setQuizHint("Audio is unavailable here. Keep using the sentence and hints.");
+        }
+      });
+      overlays.quizSubmit.addEventListener("click", () => {
+        submitQuizGuess();
+      });
+      overlays.quizInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitQuizGuess();
+        }
+      });
       document.addEventListener("pointerdown", (event) => {
         if (game.dialogActive && !game.quizActive) {
           nextDialog();

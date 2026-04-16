@@ -1,24 +1,32 @@
-# Tasks for Codex (Milestone M1 → Playable Loop)
+# Tasks and Handoff
 
-## M1 Scope
-- Title + 4 gameplay scenes + Victory.
-- Player controller + HUD + dialog + quiz system + one pet.
-- Save/continue via localStorage.
-- HTML5 export placed in `export-html5/`.
+## Current Scope
+- Keep the prototype playable directly from `export-html5/index.html`.
+- Preserve the current scene flow:
+  `Lodge Lobby -> Water Park -> Forest Trail -> Magi Tower -> Victory`
+- Keep the Kenney art pass in place.
+- Keep spelling practice as the gate mechanic.
 
-## Scene Acceptance
-- **Lobby**: 3 runes, gate needs 3; math difficulty: addition ≤10.
-- **Water Park**: 2 moving hazards, Golden Key, gate needs key; ± within 20.
-- **Forest Trail**: adopt Pine Pup after simple prompt; 2 checkpoints.
-- **Tower**: collect Wand; final × 2–5 gate; Victory.
+## Spelling Gate Design
+- Audio-first prompt using browser `speechSynthesis`.
+- Show a definition and a sentence with the target word blanked out.
+- Require typed answers instead of multiple choice.
+- Allow replay with `R` or the `Hear Word` button.
+- Keep wrong answers retryable.
+- Current word list:
+  `gnarl`, `wrist`, `coach`, `city`, `game`, `match`, `limb`, `judge`, `know`, `knew`
 
-## Technical
-- GDevelop (web). Base 1024×576. Fit to window.
-- Input: arrows/WASD, Space/W/↑, E, P, 1–4 for quizzes.
-- Pet system via external events; quiz system via external events.
-- Export: HTML5 → `export-html5/`.
+## Immediate Next Steps
+- Browser playtest the spelling gates end to end.
+- Check that audio replay works reliably on Chrome after user interaction.
+- Tune hint timing and difficulty if the words still feel too easy or too frustrating.
+- Verify mobile/touch usability for the new spelling input overlay.
+- Decide whether to add scoring, streaks, or stars for clean spelling rounds.
 
-## Delivery checklist
-- `export-html5/index.html` runs on Chromebook with no server.
-- Wrong quiz answers allow immediate retry (no hard fail).
-- Title shows “Continue” if a save exists.
+## Acceptance Checklist
+- `export-html5/index.html` runs without a server.
+- Player can finish all scenes and unlock every gate.
+- Spelling prompts do not display the answer directly in visible text.
+- Audio can replay during spelling rounds on supported browsers.
+- Wrong answers allow retry without soft-locking progression.
+- README and task docs reflect the current build.
