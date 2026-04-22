@@ -188,8 +188,8 @@
       margin-top: 16px;
     }
     .choice {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(250, 243, 216, 0.96);
+      border: 1px solid rgba(92, 62, 22, 0.28);
       padding: 12px 14px;
       border-radius: 12px;
       display: flex;
@@ -197,14 +197,22 @@
       align-items: center;
       cursor: pointer;
       transition: transform 0.15s ease, background 0.15s ease;
+      color: #24170c;
+      font-size: 17px;
+      font-weight: 700;
+      text-align: left;
     }
-    .choice:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.16); }
+    .choice:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 236, 182, 0.98);
+      border-color: rgba(120, 78, 20, 0.55);
+    }
     .choice span.badge {
       width: 26px;
       height: 26px;
       border-radius: 8px;
-      background: #5bc0ff;
-      color: #04172f;
+      background: #24446b;
+      color: #fff7e9;
       font-weight: 700;
       display: grid;
       place-items: center;
@@ -510,7 +518,7 @@
     </div>
     <div id="prompt-chip">Move with arrows or A/D. Jump with Space.</div>
     <div id="dialog"><div class="panel"><h2 id="dialog-title"></h2><p id="dialog-body"></p><p><strong>Press E</strong> to continue.</p></div></div>
-    <div id="quiz"><div class="panel"><h2 id="quiz-title">Spelling Gate</h2><p id="quiz-body"></p><div class="quiz-meta" id="quiz-meta"></div><div class="quiz-actions"><button id="quiz-hear-btn" class="secondary">Hear Word</button><input id="quiz-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type the spelling"><button id="quiz-submit-btn">Spell It</button></div><div class="quiz-hint" id="quiz-hint"></div><p id="quiz-help"><strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.</p></div></div>
+    <div id="quiz"><div class="panel"><h2 id="quiz-title">Spelling Gate</h2><p id="quiz-body"></p><div class="quiz-meta" id="quiz-meta"></div><div class="quiz-actions" id="quiz-actions"><button id="quiz-hear-btn" class="secondary">Hear Word</button><input id="quiz-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type the spelling"><button id="quiz-submit-btn">Spell It</button></div><div class="choice-grid" id="quiz-choices"></div><div class="quiz-hint" id="quiz-hint"></div><p id="quiz-help"><strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.</p></div></div>
     <div id="pause"><div class="panel"><h2>Paused</h2><p>Press Shift+P to resume.</p></div></div>
     <div id="title"><div class="panel title-panel"><div class="title-highlight">Kid-friendly platform adventure</div><h2>MagiWolf Quest</h2><p class="title-lead">Guide Magi Alastair through the lodge, splash park, forest trail, inventor workshop, tower, and final boss battle powered by spelling.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: Shift+P.</p><div class="feature-strip"><div class="feature-card"><strong>Collect bright runes</strong><span>Every scene gives a clear goal and a satisfying treasure to chase.</span></div><div class="feature-card"><strong>Optional STEM quests</strong><span>Science, math, chemistry, and engineering clues can grow your heart meter.</span></div><div class="feature-card"><strong>Beat the boss with spelling</strong><span>Use the wand to cast correct words at Stormshell Rex before two misses knock you out.</span></div></div><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
     <div id="victory"><div class="panel"><div class="victory-stars"><span>★</span><span>★</span><span>★</span></div><h2>Victory!</h2><p>Stormshell Rex is down. Magi Alastair has proven courage, curiosity, and spelling power.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
@@ -559,7 +567,9 @@
       quizTitle: document.getElementById("quiz-title"),
       quizBody: document.getElementById("quiz-body"),
       quizMeta: document.getElementById("quiz-meta"),
+      quizActions: document.getElementById("quiz-actions"),
       quizInput: document.getElementById("quiz-input"),
+      quizChoices: document.getElementById("quiz-choices"),
       quizHear: document.getElementById("quiz-hear-btn"),
       quizSubmit: document.getElementById("quiz-submit-btn"),
       quizHint: document.getElementById("quiz-hint"),
@@ -650,7 +660,7 @@
       pet: null,
       gateStates: { lobby: false, water: false, workshop: false, tower: false },
       sideQuestStates: { lobby: false, water: false, forest: false, workshop: false, tower: false },
-      bossState: { active: false, defeated: false, roundIndex: 0, hp: 2, mistakes: 0, cooldown: 0, nextAttack: 1.4, fireballs: [], hitFlash: 0, introPlayed: false, cutsceneActive: false, cutsceneWords: [], cutsceneTimer: 0, cutsceneStep: 0 },
+      bossState: { active: false, defeated: false, roundIndex: 0, hp: 4, maxHp: 4, mistakes: 0, cooldown: 0, nextAttack: 1.4, fireballs: [], hitFlash: 0, introPlayed: false, cutsceneActive: false, cutsceneWords: [], cutsceneTimer: 0, cutsceneStep: 0, wordQueue: [], fall: 0, vanish: 0 },
       dialogQueue: [],
       dialogActive: false,
       quizActive: false,
@@ -701,116 +711,122 @@
       section: 0
     };
 
+    const MUSIC_VOLUME = 0.036;
+
+    function noteRatio(semitones) {
+      return Math.pow(2, semitones / 12);
+    }
+
     const MUSIC_PATTERNS = {
       lodge: {
         root: 261.63,
-        beat: 0.3,
+        beat: 0.34,
         sections: [
           {
-            pad: [1, 1.25, 1.5, 1.25],
-            lead: [2, 2.5, 3, 2.5, 3, 4, 3, 2.5],
-            bass: [0.5, 0.75, 1, 0.75]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-12), noteRatio(-5), noteRatio(-12)]
           },
           {
-            pad: [1, 1.33, 1.5, 1.33],
-            lead: [2, 3, 3.5, 3, 2.5, 3, 4, 3],
-            bass: [0.5, 1, 0.75, 1]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(-5)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-2), noteRatio(-12)]
           }
         ]
       },
       water: {
         root: 293.66,
-        beat: 0.28,
+        beat: 0.33,
         sections: [
           {
-            pad: [1, 1.33, 1.2, 1.33],
-            lead: [2, 2.25, 3, 2.25, 3.5, 3, 2.25, 2],
-            bass: [0.5, 0.75, 0.6, 0.75]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
           },
           {
-            pad: [1, 1.5, 1.2, 1.5],
-            lead: [2.25, 3, 3.5, 3, 4, 3.5, 3, 2.25],
-            bass: [0.5, 0.6, 0.75, 1]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-7), noteRatio(-12)]
           }
         ]
       },
       forest: {
         root: 220,
-        beat: 0.34,
+        beat: 0.36,
         sections: [
           {
-            pad: [1, 1.2, 1.5, 1.2],
-            lead: [1.5, 1.8, 2, 1.8, 2.25, 2, 1.8, 1.5],
-            bass: [0.5, 0.5, 0.75, 0.5]
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-9), noteRatio(-5), noteRatio(-12)]
           },
           {
-            pad: [1, 1.125, 1.5, 1.125],
-            lead: [1.5, 2, 2.25, 2, 2.5, 2.25, 2, 1.5],
-            bass: [0.5, 0.75, 0.5, 0.75]
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-9), noteRatio(-12)]
           }
         ]
       },
       workshop: {
         root: 246.94,
-        beat: 0.29,
+        beat: 0.33,
         sections: [
           {
-            pad: [1, 1.2, 1.4, 1.2],
-            lead: [2, 2.4, 2.8, 3.2, 2.8, 2.4, 3.6, 3.2],
-            bass: [0.5, 0.7, 0.9, 0.7]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
           },
           {
-            pad: [1, 1.25, 1.5, 1.25],
-            lead: [2.4, 2.8, 3.2, 3.6, 3.2, 2.8, 4, 3.6],
-            bass: [0.5, 0.9, 0.7, 1]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(7)],
+            lead: [noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(-7)]
           }
         ]
       },
       tower: {
         root: 233.08,
-        beat: 0.31,
+        beat: 0.35,
         sections: [
           {
-            pad: [1, 1.125, 1.5, 1.125],
-            lead: [2, 2.25, 3, 2.25, 3.5, 3, 2.25, 2],
-            bass: [0.5, 0.56, 0.75, 0.56]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
           },
           {
-            pad: [1, 1.2, 1.6, 1.2],
-            lead: [2.25, 3, 3.5, 3, 4, 3.5, 3, 2.25],
-            bass: [0.5, 0.75, 0.56, 0.75]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(7)],
+            lead: [noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(-7)]
           }
         ]
       },
       boss: {
-        root: 164.81,
-        beat: 0.27,
+        root: 220,
+        beat: 0.24,
         sections: [
           {
-            pad: [1, 0.94, 1.12, 0.94],
-            lead: [1.5, 1.42, 1.68, 1.42, 1.9, 1.68, 1.42, 1.26],
-            bass: [0.5, 0.47, 0.56, 0.47]
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(3)],
+            lead: [noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(3), noteRatio(2)],
+            bass: [noteRatio(-12), noteRatio(-12), noteRatio(-10), noteRatio(-12)]
           },
           {
-            pad: [1, 1.06, 1.2, 1.06],
-            lead: [1.26, 1.42, 1.68, 1.9, 1.68, 1.42, 1.26, 1.12],
-            bass: [0.5, 0.56, 0.47, 0.56]
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(8)],
+            lead: [noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(7), noteRatio(5), noteRatio(7), noteRatio(8), noteRatio(7), noteRatio(5), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(0), noteRatio(-2)],
+            bass: [noteRatio(-12), noteRatio(-10), noteRatio(-8), noteRatio(-12)]
           }
         ]
       },
       victory: {
         root: 329.63,
-        beat: 0.3,
+        beat: 0.34,
         sections: [
           {
-            pad: [1, 1.33, 1.5, 2],
-            lead: [2, 2.5, 3, 4, 3, 4, 4.5, 4],
-            bass: [0.5, 0.75, 1, 1.5]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(12)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(0)]
           },
           {
-            pad: [1, 1.5, 2, 1.5],
-            lead: [2.5, 3, 4, 4.5, 4, 5, 4.5, 4],
-            bass: [0.5, 1, 1.5, 1]
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(12)],
+            lead: [noteRatio(7), noteRatio(7), noteRatio(9), noteRatio(7), noteRatio(5), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(0)]
           }
         ]
       }
@@ -891,6 +907,62 @@
       ],
       boss: [
         {
+          word: "blonde",
+          definition: "having light yellow hair",
+          sentence: "The blonde wizard wore a bright blue cape.",
+          displaySentence: "The ____ wizard wore a bright blue cape.",
+          hints: ["It starts with \"bl\".", "It has \"on\" in the middle.", "It ends with \"de\"."]
+        },
+        {
+          word: "soccer",
+          definition: "a game where players kick a ball toward a goal",
+          sentence: "We played soccer outside after school.",
+          displaySentence: "We played ____ outside after school.",
+          hints: ["It starts with \"s\".", "It has double c in the middle.", "It ends with \"er\"."]
+        },
+        {
+          word: "chicken",
+          definition: "a farm bird with feathers and wings",
+          sentence: "The chicken pecked near the fence.",
+          displaySentence: "The ____ pecked near the fence.",
+          hints: ["It starts with \"ch\".", "It has \"ick\" in the middle.", "It ends with \"en\"."]
+        },
+        {
+          word: "panda",
+          definition: "a black-and-white bear that likes bamboo",
+          sentence: "The panda munched crunchy bamboo.",
+          displaySentence: "The ____ munched crunchy bamboo.",
+          hints: ["It starts with \"p\".", "It has \"and\" in the middle.", "It ends with \"a\"."]
+        },
+        {
+          word: "inventor",
+          definition: "a person who creates something new",
+          sentence: "The inventor built a clever machine.",
+          displaySentence: "The ____ built a clever machine.",
+          hints: ["It starts with \"in\".", "It has \"vent\" in the middle.", "It ends with \"or\"."]
+        },
+        {
+          word: "engineer",
+          definition: "a person who designs and builds things",
+          sentence: "The engineer fixed the bridge plan.",
+          displaySentence: "The ____ fixed the bridge plan.",
+          hints: ["It starts with \"en\".", "It has \"gin\" in the middle.", "It ends with \"eer\"."]
+        },
+        {
+          word: "piano",
+          definition: "a musical instrument with black and white keys",
+          sentence: "She played the piano at recital time.",
+          displaySentence: "She played the ____ at recital time.",
+          hints: ["It starts with \"p\".", "It has \"ian\" in the middle.", "It ends with \"o\"."]
+        },
+        {
+          word: "music",
+          definition: "organized sound with rhythm and melody",
+          sentence: "Music floated through the tower hall.",
+          displaySentence: "____ floated through the tower hall.",
+          hints: ["It starts with \"m\".", "It has \"us\" in the middle.", "It ends with \"ic\"."]
+        },
+        {
           word: "tennis",
           definition: "a sport where players hit a ball back and forth",
           sentence: "We watched a tennis match on TV.",
@@ -913,50 +985,160 @@
         id: "lobby",
         prompt: { x: 1040, y: 438, w: 72, h: 64 },
         title: "Science Side Quest",
-        body: "Your plant looks droopy. Type the thing you should pour on it to help it grow.",
-        answer: "water",
-        answerLabel: "water",
-        hints: ["Plants need a drink.", "It starts with \"w\" and ends with \"er\"."],
+        questions: [
+          {
+            body: "Your plant looks droopy. What should you pour on it to help it grow?",
+            answer: "Water",
+            choices: ["Water", "Sand", "Paper"],
+            hints: ["Plants need a drink.", "It comes out of a faucet."]
+          },
+          {
+            body: "A plant grows best when it gets light from the sky. Which thing does it need?",
+            answer: "Sunlight",
+            choices: ["Sunlight", "A pillow", "A flashlight toy"],
+            hints: ["It comes from the sun.", "Plants use it to grow."]
+          },
+          {
+            body: "Where do roots usually grow for a garden plant?",
+            answer: "Soil",
+            choices: ["Soil", "Ice", "A bookshelf"],
+            hints: ["It is dirt for plants.", "It starts with \"s\"."]
+          },
+          {
+            body: "Which part of a plant is usually green and helps catch sunlight?",
+            answer: "Leaves",
+            choices: ["Leaves", "Shoes", "Bubbles"],
+            hints: ["They grow on stems and branches.", "They are often green."]
+          }
+        ],
         reward: "+1 max heart"
       },
       water: {
         id: "water",
         prompt: { x: 980, y: 248, w: 72, h: 64 },
         title: "Math Side Quest",
-        body: "Two kids are waiting for the slide. Three more come over. Type how many kids there are now.",
-        answer: "5",
-        answerLabel: "5",
-        hints: ["Count on from 2.", "It is one more than 4."],
+        questions: [
+          {
+            body: "Two kids are waiting for the slide. Three more come over. How many kids are there now?",
+            answer: "5",
+            choices: ["4", "5", "6"],
+            hints: ["Count on from 2.", "It is one more than 4."]
+          },
+          {
+            body: "You see 7 floaties in the pool. Two float away. How many are left?",
+            answer: "5",
+            choices: ["3", "5", "9"],
+            hints: ["Start at 7 and count back 2.", "The answer is less than 7."]
+          },
+          {
+            body: "A team has 4 red beach balls and 4 blue beach balls. How many balls are there in all?",
+            answer: "8",
+            choices: ["6", "8", "9"],
+            hints: ["4 plus 4.", "It is one more than 7."]
+          },
+          {
+            body: "There are 10 water slides. One is closed. How many are open?",
+            answer: "9",
+            choices: ["8", "9", "10"],
+            hints: ["10 minus 1.", "It is almost all of them."]
+          }
+        ],
         reward: "+1 max heart"
       },
       forest: {
         id: "forest",
         prompt: { x: 1160, y: 438, w: 72, h: 64 },
         title: "Engineering Side Quest",
-        body: "Builders use one strong shape again and again in bridges. Type triangle or circle.",
-        answer: "triangle",
-        answerLabel: "triangle",
-        hints: ["It has 3 sides.", "Builders use this shape for support."],
+        questions: [
+          {
+            body: "Builders use one strong shape again and again in bridges. Which shape is it?",
+            answer: "Triangle",
+            choices: ["Triangle", "Circle", "Squiggle"],
+            hints: ["It has 3 sides.", "Builders use this shape for support."]
+          },
+          {
+            body: "Which material would help make a bridge feel strong?",
+            answer: "Wood",
+            choices: ["Wood", "Marshmallows", "Pillows"],
+            hints: ["You can build with it.", "Trees are used to make it."]
+          },
+          {
+            body: "If a tower keeps tipping over, what can help it stay up better?",
+            answer: "A wider base",
+            choices: ["A wider base", "Less support", "More wobbling"],
+            hints: ["The bottom should be stronger.", "It means the bottom is not skinny."]
+          },
+          {
+            body: "What do engineers usually do first before building something big?",
+            answer: "Make a plan",
+            choices: ["Make a plan", "Guess", "Throw it"],
+            hints: ["They draw and think first.", "It helps them know what to build."]
+          }
+        ],
         reward: "+1 max heart"
       },
       workshop: {
         id: "workshop",
         prompt: { x: 1240, y: 248, w: 72, h: 64 },
         title: "Chemistry Side Quest",
-        body: "A block of ice sits in the warm sun. Type what it turns into after it melts.",
-        answer: "water",
-        answerLabel: "water",
-        hints: ["It is a liquid.", "You drink it."],
+        questions: [
+          {
+            body: "A block of ice sits in the warm sun. What does it turn into after it melts?",
+            answer: "Water",
+            choices: ["Water", "Rock", "Smoke"],
+            hints: ["It is a liquid.", "You drink it."]
+          },
+          {
+            body: "What happens to water if it gets very, very cold?",
+            answer: "It freezes",
+            choices: ["It freezes", "It becomes sand", "It disappears forever"],
+            hints: ["It turns solid.", "Ice is an example."]
+          },
+          {
+            body: "When you mix red paint and yellow paint, what new color do you get?",
+            answer: "Orange",
+            choices: ["Orange", "Purple", "Brown"],
+            hints: ["It is the color of many pumpkins.", "It is between red and yellow."]
+          },
+          {
+            body: "Which one is a liquid?",
+            answer: "Juice",
+            choices: ["Juice", "Brick", "Pencil"],
+            hints: ["You can pour it.", "You might drink it at lunch."]
+          }
+        ],
         reward: "+1 max heart"
       },
       tower: {
         id: "tower",
         prompt: { x: 760, y: 338, w: 72, h: 64 },
         title: "STEM Side Quest",
-        body: "What tool can pull a paper clip without touching it? Type one word.",
-        answer: "magnet",
-        answerLabel: "magnet",
-        hints: ["It starts with \"m\".", "It can stick to some metal things."],
+        questions: [
+          {
+            body: "What tool can pull a paper clip without touching it?",
+            answer: "Magnet",
+            choices: ["Magnet", "Feather", "Pencil"],
+            hints: ["It sticks to some metal things.", "It starts with \"m\"."]
+          },
+          {
+            body: "Which tool would help you look closely at a bug?",
+            answer: "Magnifying glass",
+            choices: ["Magnifying glass", "Spoon", "Blanket"],
+            hints: ["It makes things look bigger.", "Detectives sometimes use one."]
+          },
+          {
+            body: "Which one is a machine?",
+            answer: "Bicycle",
+            choices: ["Bicycle", "Apple", "Cloud"],
+            hints: ["It has moving parts.", "You can ride it."]
+          },
+          {
+            body: "If you want to measure how long a table is, what should you use?",
+            answer: "Ruler",
+            choices: ["Ruler", "Pillow", "Crayon"],
+            hints: ["It measures length.", "It often has inches on it."]
+          }
+        ],
         reward: "+1 max heart"
       }
     };
@@ -1138,7 +1320,7 @@
         boss: {
           body: { x: 1120, y: 220, w: 220, h: 220 },
           altar: { x: 860, y: 410, w: 84, h: 84 },
-          hp: 2,
+          hp: 4,
           name: "Stormshell Rex"
         },
         exits: [
@@ -1227,7 +1409,7 @@
           title: game.bossState.defeated ? "Escape to victory" : "Defeat Stormshell Rex",
           copy: game.bossState.defeated
             ? "The boss is down. Walk to the glowing exit and celebrate."
-            : `Use the wand circle to cast spelling attacks. Boss HP ${game.bossState.hp}/2. Two mistakes means defeat.`
+            : `Use the wand circle to cast spelling attacks. Boss HP ${game.bossState.hp}/${game.bossState.maxHp}. Two mistakes means defeat.`
         };
       }
       return {
@@ -1433,34 +1615,34 @@
       try {
         MUSIC.ctx = new AudioContextCtor();
         MUSIC.master = MUSIC.ctx.createGain();
-        MUSIC.master.gain.value = 0.045;
+        MUSIC.master.gain.value = MUSIC_VOLUME;
         MUSIC.master.connect(MUSIC.ctx.destination);
 
         MUSIC.pad = MUSIC.ctx.createOscillator();
-        MUSIC.pad.type = "triangle";
+        MUSIC.pad.type = "sine";
         const padGain = MUSIC.ctx.createGain();
-        padGain.gain.value = 0.018;
+        padGain.gain.value = 0.014;
         MUSIC.pad.connect(padGain).connect(MUSIC.master);
 
         MUSIC.lead = MUSIC.ctx.createOscillator();
-        MUSIC.lead.type = "square";
+        MUSIC.lead.type = "triangle";
         const leadGain = MUSIC.ctx.createGain();
-        leadGain.gain.value = 0.008;
+        leadGain.gain.value = 0.0065;
         MUSIC.lead.connect(leadGain).connect(MUSIC.master);
 
         MUSIC.bass = MUSIC.ctx.createOscillator();
         MUSIC.bass.type = "sine";
         const bassGain = MUSIC.ctx.createGain();
-        bassGain.gain.value = 0.03;
+        bassGain.gain.value = 0.024;
         MUSIC.bass.connect(bassGain).connect(MUSIC.master);
 
         MUSIC.tremolo = MUSIC.ctx.createOscillator();
         MUSIC.tremolo.type = "sine";
         MUSIC.pulse = MUSIC.ctx.createGain();
-        MUSIC.pulse.gain.value = 4;
+        MUSIC.pulse.gain.value = 2.2;
         MUSIC.tremolo.connect(MUSIC.pulse);
         MUSIC.pulse.connect(leadGain.gain);
-        MUSIC.tremolo.frequency.value = 4.2;
+        MUSIC.tremolo.frequency.value = 3.1;
 
         MUSIC.pad.start();
         MUSIC.lead.start();
@@ -1493,7 +1675,7 @@
       const now = MUSIC.ctx.currentTime;
       MUSIC.mutedForQuiz = muted;
       MUSIC.master.gain.cancelScheduledValues(now);
-      MUSIC.master.gain.linearRampToValueAtTime(muted ? 0.001 : 0.045, now + 0.12);
+      MUSIC.master.gain.linearRampToValueAtTime(muted ? 0.001 : MUSIC_VOLUME, now + 0.12);
     }
 
     function updateMusic() {
@@ -1570,6 +1752,26 @@
       overlays.quizHint.textContent = text || "";
     }
 
+    function setQuizChoices(round) {
+      overlays.quizChoices.innerHTML = "";
+      if (!round || !round.choices || round.choices.length === 0) {
+        overlays.quizChoices.style.display = "none";
+        return;
+      }
+      overlays.quizChoices.style.display = "grid";
+      round.choices.forEach((choice, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.innerHTML = `<span class="badge">${String.fromCharCode(65 + index)}</span><span>${choice}</span>`;
+        button.addEventListener("click", () => {
+          if (!game.quizHandler) return;
+          game.quizHandler(choice);
+        });
+        overlays.quizChoices.appendChild(button);
+      });
+    }
+
     function normalizeSpelling(text) {
       return (text || "").trim().toLowerCase().replace(/[^a-z]/g, "");
     }
@@ -1604,14 +1806,23 @@
       }
       overlays.quizMeta.textContent = round.meta || `${(round.answerLabel || round.word).length} letters`;
       overlays.quizInput.value = "";
-      overlays.quizHear.style.display = round.disableAudio ? "none" : "";
-      overlays.quizHelp.innerHTML = round.disableAudio
-        ? "<strong>Press Enter</strong> to submit your answer."
-        : "<strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.";
+      const multipleChoice = !!(round.choices && round.choices.length);
+      overlays.quizActions.style.display = multipleChoice ? "none" : "grid";
+      overlays.quizHear.style.display = round.disableAudio || multipleChoice ? "none" : "";
+      setQuizChoices(round);
+      overlays.quizHelp.innerHTML = multipleChoice
+        ? "Choose the best answer."
+        : round.disableAudio
+          ? "<strong>Press Enter</strong> to submit your answer."
+          : "<strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.";
       const spoke = round.disableAudio ? false : speakSpellingRound(round);
       setQuizHint(round.initialHint || (spoke ? "Listen to the word, then type the spelling." : "Audio is unavailable here. Use the definition, sentence, and hints."));
       overlays.quiz.style.display = "grid";
-      requestAnimationFrame(() => overlays.quizInput.focus());
+      requestAnimationFrame(() => {
+        if (!multipleChoice) {
+          overlays.quizInput.focus();
+        }
+      });
     }
 
     function closeQuiz() {
@@ -1620,6 +1831,9 @@
       game.quizRound = null;
       overlays.quizInput.value = "";
       setQuizHint("");
+      overlays.quizActions.style.display = "grid";
+      overlays.quizChoices.innerHTML = "";
+      overlays.quizChoices.style.display = "none";
       overlays.quizHear.style.display = "";
       overlays.quizHelp.innerHTML = "<strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.";
       overlays.quiz.style.display = "none";
@@ -1671,7 +1885,7 @@
       game.gateStates = Object.assign({ lobby: false, water: false, workshop: false, tower: false }, data.gateStates || {});
       game.sideQuestStates = Object.assign({ lobby: false, water: false, forest: false, workshop: false, tower: false }, data.sideQuestStates || {});
       game.lastCheckpoint = data.lastCheckpoint;
-      game.bossState = Object.assign(createBossState(2), data.bossState || {});
+      game.bossState = Object.assign(createBossState(SCENES["Boss Arena"].boss.hp), data.bossState || {});
       const lobbyRunes = SCENES["Lodge Lobby"].runes;
       if (data.sceneState && data.sceneState.lobbyRunes) {
         data.sceneState.lobbyRunes.forEach((value, idx) => lobbyRunes[idx].collected = value);
@@ -1697,7 +1911,7 @@
       game.pet = null;
       game.gateStates = { lobby: false, water: false, workshop: false, tower: false };
       game.sideQuestStates = { lobby: false, water: false, forest: false, workshop: false, tower: false };
-      game.bossState = createBossState(2);
+      game.bossState = createBossState(SCENES["Boss Arena"].boss.hp);
       game.lastCheckpoint = null;
       SCENES["Lodge Lobby"].runes.forEach(r => r.collected = false);
       SCENES["Water Park"].keyItem.collected = false;
@@ -1875,6 +2089,7 @@
         answerLabel: options.answerLabel || options.answer,
         body: options.body,
         meta: options.meta || "",
+        choices: options.choices ? shuffle(options.choices) : null,
         hints: (options.hints || []).slice(),
         attempts: 0,
         disableAudio: !!options.disableAudio,
@@ -1896,19 +2111,21 @@
         queueDialog(sideQuest.title, "You already solved this side quest.");
         return;
       }
+      const question = shuffle(sideQuest.questions)[0];
       const round = createPromptQuiz({
-        answer: sideQuest.answer,
-        answerLabel: sideQuest.answerLabel,
-        body: `<strong>Optional Reward:</strong> ${sideQuest.reward}<br>${sideQuest.body}`,
+        answer: question.answer,
+        answerLabel: question.answer,
+        body: `<strong>Optional Reward:</strong> ${sideQuest.reward}<br>${question.body}`,
         meta: "Bonus side quest",
-        hints: sideQuest.hints,
+        choices: question.choices,
+        hints: question.hints,
         disableAudio: true,
-        initialHint: "Type the answer to earn a health upgrade."
+        initialHint: "Pick the best answer to earn a health upgrade."
       });
       showQuiz(round, sideQuest.title, guess => {
         const answer = normalizeAnswer(guess);
         if (!answer) {
-          setQuizHint("Type your answer before you submit.");
+          setQuizHint("Pick one of the choices to answer.");
           return;
         }
         if (answer === round.word) {
@@ -1938,6 +2155,9 @@
       if (!game.inventory.wand) {
         queueDialog("Boss Arena", "You need the wand before you can cast in here.");
         return;
+      }
+      if (!game.bossState.wordQueue || game.bossState.wordQueue.length === 0) {
+        game.bossState.wordQueue = shuffle(createGateQuiz("boss"));
       }
       if (!game.bossState.introPlayed && game.bossState.roundIndex === 0) {
         startBossIntroCutscene(scene);
@@ -2000,6 +2220,10 @@
       }
       if (game.bossState && game.bossState.hitFlash > 0) {
         game.bossState.hitFlash = Math.max(0, game.bossState.hitFlash - dt);
+      }
+      if (game.bossState && game.bossState.defeated) {
+        game.bossState.fall = Math.min(220, (game.bossState.fall || 0) + 180 * dt);
+        game.bossState.vanish = Math.min(1, (game.bossState.vanish || 0) + 0.75 * dt);
       }
       if (game.bossState && game.bossState.cutsceneActive) {
         updateBossCutscene(scene, dt);
@@ -2802,10 +3026,22 @@
       ctx.translate(-cam.x, -cam.y);
       const time = Date.now() / 220;
       const bodyX = boss.body.x;
-      const bodyY = boss.body.y + Math.sin(time) * 3;
+      const fallOffset = game.bossState.fall || 0;
+      const vanish = game.bossState.vanish || 0;
+      if (game.bossState.defeated && vanish >= 1) {
+        ctx.restore();
+        return;
+      }
+      const bodyY = boss.body.y + Math.sin(time) * 3 + fallOffset;
       const alive = !game.bossState.defeated;
       const lunge = alive && game.bossState.active ? Math.sin(time * 0.8) * 10 : 0;
       const hitFlash = game.bossState.hitFlash > 0 ? Math.sin(Date.now() / 50) > 0 ? "#f3e59f" : "#8bb74f" : null;
+      ctx.globalAlpha = 1 - vanish;
+      if (!alive) {
+        ctx.translate(bodyX + 120, bodyY + 120);
+        ctx.rotate(Math.min(1.1, vanish * 1.2));
+        ctx.translate(-(bodyX + 120), -(bodyY + 120));
+      }
       ctx.fillStyle = hitFlash || (alive ? "#5d7d34" : "#6d5a4e");
       ctx.beginPath();
       ctx.roundRect(bodyX + 18 - lunge, bodyY + 38, 160, 118, 36);
@@ -2866,10 +3102,13 @@
       ctx.fillText("WAND", boss.altar.x + 14, boss.altar.y + 30);
       ctx.fillText("CAST", boss.altar.x + 18, boss.altar.y + 52);
       ctx.fillStyle = "#ffd1d1";
-      ctx.fillText(`Boss HP ${game.bossState.hp}/2`, bodyX + 54, bodyY - 12);
+      ctx.fillText(`Boss HP ${game.bossState.hp}/${game.bossState.maxHp}`, bodyX + 54, bodyY - 12);
       if (game.bossState.cutsceneActive) {
         ctx.fillStyle = "#fff1b8";
         ctx.fillText("Stormshell Rex is trying to eat the words.", bodyX - 90, bodyY - 40);
+      } else if (!alive && vanish < 1) {
+        ctx.fillStyle = "#ffe8c2";
+        ctx.fillText("Stormshell Rex crashes away.", bodyX - 20, bodyY - 34);
       }
       ctx.restore();
     }
@@ -2880,6 +3119,7 @@
         defeated: false,
         roundIndex: 0,
         hp,
+        maxHp: hp,
         mistakes: 0,
         cooldown: 0,
         nextAttack: 1.4,
@@ -2889,7 +3129,10 @@
         cutsceneActive: false,
         cutsceneWords: [],
         cutsceneTimer: 0,
-        cutsceneStep: 0
+        cutsceneStep: 0,
+        wordQueue: [],
+        fall: 0,
+        vanish: 0
       };
     }
 
@@ -3255,8 +3498,10 @@
     function beginBossSpellingRound() {
       const scene = getScene();
       if (!scene.boss) return;
-      const rounds = createGateQuiz("boss");
-      const round = rounds[game.bossState.roundIndex];
+      if (!game.bossState.wordQueue || game.bossState.wordQueue.length === 0) {
+        game.bossState.wordQueue = shuffle(createGateQuiz("boss"));
+      }
+      const round = game.bossState.wordQueue[0];
       if (!round) {
         game.bossState.defeated = true;
         game.bossState.active = false;
@@ -3267,14 +3512,15 @@
         saveGame();
         return;
       }
-      showQuiz(round, `Boss Spell ${game.bossState.roundIndex + 1}/${rounds.length}`, guess => {
+      showQuiz(round, `Boss Spell ${game.bossState.roundIndex + 1}`, guess => {
         const answer = normalizeAnswer(guess);
         if (!answer) {
           setQuizHint("Type the spelling before you cast.");
           return;
         }
-        game.bossState.roundIndex += 1;
         if (answer === round.word) {
+          game.bossState.wordQueue.shift();
+          game.bossState.roundIndex += 1;
           game.bossState.hp = Math.max(0, game.bossState.hp - 1);
           game.bossState.hitFlash = 0.9;
           closeQuiz();
@@ -3296,6 +3542,16 @@
           return;
         }
 
+        game.bossState.wordQueue.shift();
+        game.bossState.wordQueue.push({
+          word: round.word,
+          answerLabel: round.answerLabel,
+          definition: round.definition,
+          sentence: round.sentence,
+          displaySentence: round.displaySentence,
+          hints: round.hints.slice(),
+          attempts: 0
+        });
         game.bossState.mistakes += 1;
         game.bossState.cooldown = 1.35;
         game.bossState.nextAttack = 0.18;
