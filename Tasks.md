@@ -65,3 +65,13 @@
 - Boss visibly crashes and disappears on defeat.
 - Multiple-choice STEM answers are readable and clearly selectable.
 - README and task docs reflect the current build.
+
+## Lord of the Keys — Next Steps
+- Verify dual-track progression end-to-end to ensure state doesn't bleed.
+- Ensure timer difficulty scaling on Ranger gate challenge feels fair in late game.
+- Review and refine typing metrics logic (WPM/Accuracy) for exact precision.
+- [ ] Add sound effects for enemy defeat and gate opening.
+- [ ] Implement multi-question lore quests for higher difficulty.
+- [ ] Add more variety to boss attack patterns.
+- [ ] Optimize canvas drawing for lower-end Chromebooks.
+

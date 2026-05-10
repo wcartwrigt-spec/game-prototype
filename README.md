@@ -67,3 +67,24 @@ Kid-friendly browser platformer prototype for Chromebook-friendly HTML5 play.
   verify the boss collapse timing feels satisfying and not too slow,
   decide whether to replace the melody-inspired synth with actual licensed/public-domain audio later,
   tune music arrangement variety if the exploration loop still feels repetitive over longer sessions.
+
+## Lord of the Keys
+
+Kid-friendly LOTR-inspired typing game. Open `export-html5/index.html` to choose
+between MagiWolf Quest and Lord of the Keys from the launcher.
+
+### Tracks
+- **Young Explorer** (ages 5–7): Benjamin Brandybuck or Theodore Took.
+  Single-letter keystroke challenges. Full 26-letter alphabet built across 7 chapters.
+- **Ranger's Trial** (ages 8–12): Magi Alastair or Silas Baggins.
+  Full-word typing. Home row → full keyboard + capitals. 3rd–5th grade vocabulary.
+
+### Files
+- `export-html5/index.html` — game mode launcher
+- `export-html5/magiquest.html` — MagiWolf Quest (unchanged original)
+- `export-html5/lotk.html` — Lord of the Keys typing game
+
+### Controls (Lord of the Keys)
+- Move: A/D or Arrow keys. Jump: Space/W/Up. Interact: E. Pause: Shift+P.
+- Typing: keyboard input (no click needed). Backspace supported.
+- Cheat codes: Up,Up,Down,Down (next chapter) / Down,Down,Up,Up (previous chapter).
