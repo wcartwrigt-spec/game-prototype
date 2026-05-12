@@ -1,7 +1,9 @@
 # Tasks and Handoff
 
 ## Current Scope
-- Keep the prototype playable directly from `export-html5/index.html`.
+- Keep the launcher playable directly from `export-html5/index.html`.
+- Keep `export-html5/magiquest.html` as the MagiWolf Quest mode.
+- Keep `export-html5/lotk.html` as the Lord of the Keys mode.
 - Preserve the current scene flow:
   `Lodge Lobby -> Water Park -> Forest Trail -> Inventor Workshop -> Magi Tower -> Boss Arena -> Victory`
 - Keep the Kenney art pass in place.
@@ -40,9 +42,11 @@
 - Local cheats:
   `Up, Up, Down, Down` -> next scene
   `Down, Down, Up, Up` -> previous scene
+- Additional mode now exists:
+  `Lord of the Keys` typing adventure, entered from the launcher.
 
 ## Immediate Next Steps
-- Browser playtest the full game end to end.
+- Browser playtest the launcher and both game modes end to end.
 - Verify the boss battle restarts correctly after two misses.
 - Check that the boss exit stays blocked until the boss is defeated.
 - Verify each STEM side quest only rewards one heart upgrade.
@@ -50,12 +54,14 @@
 - Verify `Shift+P` pause does not interfere with spelling words containing `p`.
 - Verify multiple-choice answer cards are readable on desktop and Chromebook screens.
 - Verify Stormshell Rex fully disappears after the defeat crash.
+- Verify `Lord of the Keys` loads its new assets correctly on GitHub Pages.
 - Tune hint timing and difficulty if the words still feel too easy or too frustrating.
 - Verify mobile/touch usability for the new spelling input overlay and boss sequence.
 - Decide whether to replace the synth melodies with actual downloaded public-domain audio later.
 
 ## Acceptance Checklist
-- `export-html5/index.html` runs without a server.
+- `export-html5/index.html` launcher runs without a server.
+- `export-html5/magiquest.html` and `export-html5/lotk.html` both run without a server.
 - Player can finish all scenes, unlock every gate, and beat the boss.
 - Spelling prompts do not display the answer directly in visible text.
 - Audio can replay during spelling rounds on supported browsers.

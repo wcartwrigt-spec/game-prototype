@@ -1,0 +1,3695 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagiWolf Quest</title>
+  <style>
+    :root {
+      --sky: #8cc9ff;
+      --ink: #1c1a23;
+      --wood: #9b5b2f;
+      --stone: #6c7a89;
+      --gold: #f5c542;
+      --rune: #6f9bff;
+      --wand: #c07bff;
+      --pet: #59c29a;
+      --danger: #ff6b6b;
+      --panel: rgba(20, 20, 28, 0.78);
+      --panel-light: rgba(255, 255, 255, 0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #dff2ff, #9bd1ff 40%, #6fa6ff 100%);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #game-wrap {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+    canvas {
+      width: min(100vw, 1024px);
+      height: min(100vh, 576px);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(20, 22, 36, 0.45);
+      background: #11141f;
+      image-rendering: crisp-edges;
+      touch-action: none;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-light);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+      z-index: 5;
+      max-width: min(72vw, 760px);
+      backdrop-filter: blur(8px);
+    }
+    #quest-chip {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      min-width: min(300px, 34vw);
+      max-width: min(340px, 38vw);
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(29, 28, 44, 0.9), rgba(18, 18, 28, 0.78));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 34px rgba(10, 10, 18, 0.26);
+      z-index: 5;
+      backdrop-filter: blur(8px);
+    }
+    .quest-kicker {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: #ffe3a1;
+      margin-bottom: 6px;
+    }
+    .quest-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff8e9;
+      margin-bottom: 4px;
+    }
+    .quest-copy {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #dce6ff;
+    }
+    #prompt-chip {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(17, 18, 28, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff4d3;
+      font-size: 13px;
+      letter-spacing: 0.4px;
+      z-index: 7;
+      box-shadow: 0 12px 30px rgba(10, 10, 18, 0.28);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    #prompt-chip.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    .hud-block {
+      display: grid;
+      gap: 4px;
+      align-items: center;
+      justify-items: center;
+      min-width: 90px;
+    }
+    .hud-title {
+      font-size: 11px;
+      color: #d8e7ff;
+    }
+    .hud-value {
+      font-size: 11px;
+      color: #ffffff;
+    }
+    .icon-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #111;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+    .icon.heart { background: #ff7e88; }
+    .icon.rune { background: var(--rune); }
+    .icon.key { background: var(--gold); }
+    .icon.wand { background: var(--wand); }
+    .icon.pet { background: var(--pet); }
+    #dialog, #quiz, #pause, #title, #victory {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(10, 12, 20, 0.55);
+      z-index: 10;
+    }
+    .panel {
+      width: min(760px, 92vw);
+      background: var(--panel);
+      border: 1px solid var(--panel-light);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(5, 8, 20, 0.6);
+    }
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+    .panel p {
+      margin: 8px 0;
+      line-height: 1.4;
+      color: #e4eefc;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .choice {
+      background: rgba(250, 243, 216, 0.96);
+      border: 1px solid rgba(92, 62, 22, 0.28);
+      padding: 12px 14px;
+      border-radius: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      color: #24170c;
+      font-size: 17px;
+      font-weight: 700;
+      text-align: left;
+    }
+    .choice:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 236, 182, 0.98);
+      border-color: rgba(120, 78, 20, 0.55);
+    }
+    .choice span.badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: #24446b;
+      color: #fff7e9;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+    .quiz-meta {
+      margin-top: 12px;
+      color: #ffe7a7;
+      font-size: 12px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .quiz-actions {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 16px;
+    }
+    #quiz-input {
+      width: 100%;
+      min-width: 220px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(8, 12, 22, 0.5);
+      color: #fff;
+      font-size: 18px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      text-transform: lowercase;
+    }
+    #quiz-input:focus {
+      outline: 2px solid rgba(91, 192, 255, 0.55);
+      outline-offset: 1px;
+    }
+    .quiz-hint {
+      min-height: 24px;
+      margin-top: 12px;
+      color: #dce6ff;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    #title .panel, #victory .panel { text-align: center; }
+    .title-panel {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(255, 232, 154, 0.26), transparent 34%),
+        radial-gradient(circle at top right, rgba(118, 200, 255, 0.22), transparent 30%),
+        rgba(19, 19, 31, 0.86);
+    }
+    .title-panel::before {
+      content: "";
+      position: absolute;
+      inset: auto -40px -70px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(115, 195, 255, 0.26), rgba(115, 195, 255, 0));
+      pointer-events: none;
+    }
+    .title-lead {
+      max-width: 560px;
+      margin: 0 auto 10px auto;
+      color: #f2f5ff;
+    }
+    .title-highlight {
+      display: inline-block;
+      padding: 5px 10px;
+      margin-bottom: 12px;
+      border-radius: 999px;
+      background: rgba(255, 220, 130, 0.16);
+      color: #ffe39b;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+    }
+    .feature-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+      text-align: left;
+    }
+    .feature-card {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .feature-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff2ce;
+      font-size: 13px;
+    }
+    .feature-card span {
+      display: block;
+      color: #dbe5f8;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .victory-stars {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0 6px;
+      font-size: 24px;
+      color: #ffe28c;
+    }
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #f6c96c;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #3b2400;
+      letter-spacing: 0.5px;
+    }
+    button.secondary { background: #8bd1ff; }
+    #corner-note {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 11px;
+      color: #dfe8ff;
+      opacity: 0.7;
+      z-index: 4;
+    }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 12;
+      padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      --touch-raise: 48px;
+    }
+    .touch-cluster {
+      position: absolute;
+      bottom: calc(18px + env(safe-area-inset-bottom) + var(--touch-raise));
+      display: grid;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    .touch-left {
+      left: calc(18px + env(safe-area-inset-left));
+      grid-template-columns: repeat(2, 64px);
+    }
+    .touch-right {
+      right: calc(18px + env(safe-area-inset-right));
+      grid-template-columns: repeat(2, 64px);
+      bottom: calc(56px + env(safe-area-inset-bottom) + var(--touch-raise));
+    }
+    .touch-btn {
+      width: clamp(56px, 10vw, 72px);
+      height: clamp(56px, 10vw, 72px);
+      border-radius: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(20, 20, 28, 0.55);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      user-select: none;
+      touch-action: none;
+    }
+    .touch-btn:active {
+      transform: translateY(1px);
+      background: rgba(255, 210, 140, 0.45);
+      color: #2a1f3d;
+    }
+    .touch-mini {
+      position: absolute;
+      top: calc(16px + env(safe-area-inset-top));
+      right: calc(18px + env(safe-area-inset-right));
+      display: grid;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .touch-mini .touch-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      font-size: 12px;
+    }
+    .joystick {
+      width: clamp(110px, 22vw, 160px);
+      height: clamp(110px, 22vw, 160px);
+      border-radius: 50%;
+      background: rgba(20, 20, 28, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      display: grid;
+      place-items: center;
+      touch-action: none;
+      position: relative;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    .joystick-knob {
+      width: clamp(44px, 9vw, 64px);
+      height: clamp(44px, 9vw, 64px);
+      border-radius: 50%;
+      background: rgba(255, 210, 140, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.2);
+      transform: translate(0, 0);
+    }
+    @media (max-width: 720px) {
+      canvas {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      #hud {
+        top: 8px;
+        left: 8px;
+        gap: 10px;
+        padding: 8px 10px;
+        font-size: 10px;
+        max-width: calc(100vw - 16px);
+      }
+      #quest-chip {
+        top: auto;
+        right: 8px;
+        left: 8px;
+        bottom: 86px;
+        min-width: 0;
+        max-width: none;
+        padding: 12px 14px;
+      }
+      #prompt-chip {
+        bottom: 18px;
+        width: min(92vw, 520px);
+        text-align: center;
+      }
+      .hud-block { min-width: 70px; }
+      .choice {
+        font-size: 16px;
+        padding: 16px 14px;
+      }
+      .quiz-actions {
+        grid-template-columns: 1fr;
+      }
+      #quiz-input {
+        min-width: 0;
+      }
+      .feature-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrap">
+    <canvas id="game" width="1024" height="576"></canvas>
+    <div id="hud">
+      <div class="hud-block">
+        <div class="hud-title">Magi Alastair</div>
+        <div id="scene-name">Title</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Hearts</div>
+        <div class="icon-row" id="hearts"></div>
+        <div class="hud-value" id="hearts-value"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Runes</div>
+        <div class="icon-row" id="runes"></div>
+        <div class="hud-value" id="runes-value"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Key</div>
+        <div class="icon-row" id="key"></div>
+        <div class="hud-value" id="key-value"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Wand</div>
+        <div class="icon-row" id="wand"></div>
+        <div class="hud-value" id="wand-value"></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-title">Pet</div>
+        <div class="icon-row" id="pet"></div>
+        <div class="hud-value" id="pet-value"></div>
+      </div>
+    </div>
+    <div id="quest-chip">
+      <div class="quest-kicker">Adventure Goal</div>
+      <div class="quest-title" id="quest-title">Begin the quest</div>
+      <div class="quest-copy" id="quest-copy">Start a new adventure and explore the lodge.</div>
+    </div>
+    <div id="prompt-chip">Move with arrows or A/D. Jump with Space.</div>
+    <div id="dialog"><div class="panel"><h2 id="dialog-title"></h2><p id="dialog-body"></p><p><strong>Press E</strong> to continue.</p></div></div>
+    <div id="quiz"><div class="panel"><h2 id="quiz-title">Spelling Gate</h2><p id="quiz-body"></p><div class="quiz-meta" id="quiz-meta"></div><div class="quiz-actions" id="quiz-actions"><button id="quiz-hear-btn" class="secondary">Hear Word</button><input id="quiz-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type the spelling"><button id="quiz-submit-btn">Spell It</button></div><div class="choice-grid" id="quiz-choices"></div><div class="quiz-hint" id="quiz-hint"></div><p id="quiz-help"><strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.</p></div></div>
+    <div id="pause"><div class="panel"><h2>Paused</h2><p>Press Shift+P to resume.</p></div></div>
+    <div id="title"><div class="panel title-panel"><div class="title-highlight">Kid-friendly platform adventure</div><h2>MagiWolf Quest</h2><p class="title-lead">Guide Magi Alastair through the lodge, splash park, forest trail, inventor workshop, tower, and final boss battle powered by spelling.</p><p>Move: A/D or Arrows. Jump: Space/W/Up. Interact: E. Pause: Shift+P.</p><div class="feature-strip"><div class="feature-card"><strong>Collect bright runes</strong><span>Every scene gives a clear goal and a satisfying treasure to chase.</span></div><div class="feature-card"><strong>Optional STEM quests</strong><span>Science, math, chemistry, and engineering clues can grow your heart meter.</span></div><div class="feature-card"><strong>Beat the boss with spelling</strong><span>Use the wand to cast correct words at Stormshell Rex before two misses knock you out.</span></div></div><div class="btn-row"><button id="start-btn">New Adventure</button><button id="continue-btn" class="secondary">Continue</button></div></div></div>
+    <div id="victory"><div class="panel"><div class="victory-stars"><span>★</span><span>★</span><span>★</span></div><h2>Victory!</h2><p>Stormshell Rex is down. Magi Alastair has proven courage, curiosity, and spelling power.</p><div class="btn-row"><button id="restart-btn">Play Again</button></div></div></div>
+    <div id="touch-controls">
+      <div class="touch-cluster touch-left">
+        <div class="joystick" id="joystick">
+          <div class="joystick-knob" id="joystick-knob"></div>
+        </div>
+      </div>
+      <div class="touch-cluster touch-right">
+        <div class="touch-btn" data-action="jump">JUMP</div>
+        <div class="touch-btn" data-action="interact">E</div>
+      </div>
+      <div class="touch-mini">
+        <div class="touch-btn" data-action="pause">P</div>
+      </div>
+    </div>
+    <div id="corner-note">M1 prototype build</div>
+  </div>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const hud = {
+      scene: document.getElementById("scene-name"),
+      hearts: document.getElementById("hearts"),
+      runes: document.getElementById("runes"),
+      key: document.getElementById("key"),
+      wand: document.getElementById("wand"),
+      pet: document.getElementById("pet"),
+      heartsValue: document.getElementById("hearts-value"),
+      runesValue: document.getElementById("runes-value"),
+      keyValue: document.getElementById("key-value"),
+      wandValue: document.getElementById("wand-value"),
+      petValue: document.getElementById("pet-value"),
+      questTitle: document.getElementById("quest-title"),
+      questCopy: document.getElementById("quest-copy"),
+      prompt: document.getElementById("prompt-chip")
+    };
+
+    const overlays = {
+      dialog: document.getElementById("dialog"),
+      dialogTitle: document.getElementById("dialog-title"),
+      dialogBody: document.getElementById("dialog-body"),
+      quiz: document.getElementById("quiz"),
+      quizTitle: document.getElementById("quiz-title"),
+      quizBody: document.getElementById("quiz-body"),
+      quizMeta: document.getElementById("quiz-meta"),
+      quizActions: document.getElementById("quiz-actions"),
+      quizInput: document.getElementById("quiz-input"),
+      quizChoices: document.getElementById("quiz-choices"),
+      quizHear: document.getElementById("quiz-hear-btn"),
+      quizSubmit: document.getElementById("quiz-submit-btn"),
+      quizHint: document.getElementById("quiz-hint"),
+      quizHelp: document.getElementById("quiz-help"),
+      pause: document.getElementById("pause"),
+      title: document.getElementById("title"),
+      victory: document.getElementById("victory"),
+      start: document.getElementById("start-btn"),
+      continue: document.getElementById("continue-btn"),
+      restart: document.getElementById("restart-btn")
+    };
+    const touchControls = document.getElementById("touch-controls");
+    const joystick = document.getElementById("joystick");
+    const joystickKnob = document.getElementById("joystick-knob");
+
+    const INPUT = { left: false, right: false, up: false, interact: false };
+
+    const KEYMAP = {
+      ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up",
+      a: "left", d: "right", w: "up"
+    };
+
+    const SPRITES = {
+      backgrounds: {
+        clouds: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_clouds.png",
+        hills: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_hills.png",
+        trees: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_trees.png",
+        mushrooms: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_mushrooms.png",
+        desert: "assets/kenney_new_platformer/Sprites/Backgrounds/Double/background_color_desert.png"
+      },
+      player: {
+        idle: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_idle.png",
+        jump: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_jump.png",
+        walkA: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_walk_a.png",
+        walkB: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_walk_b.png",
+        duck: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_duck.png",
+        hit: "assets/kenney_new_platformer/Sprites/Characters/Double/character_purple_hit.png"
+      },
+      pickups: {
+        rune: "assets/kenney_new_platformer/Sprites/Tiles/Double/gem_blue.png",
+        key: "assets/kenney_new_platformer/Sprites/Tiles/Double/key_yellow.png",
+        wand: "assets/kenney_new_platformer/Sprites/Tiles/Double/star.png",
+        heart: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart.png"
+      },
+      hud: {
+        heart: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart.png",
+        heartEmpty: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_heart_empty.png",
+        key: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_key_yellow.png",
+        player: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_player_purple.png",
+        pet: "assets/kenney_new_platformer/Sprites/Tiles/Double/hud_player_green.png"
+      },
+      props: {
+        grass: "assets/kenney_new_platformer/Sprites/Tiles/Double/grass.png",
+        plank: "assets/kenney_new_platformer/Sprites/Tiles/Double/block_planks.png",
+        stone: "assets/kenney_new_platformer/Sprites/Tiles/Double/bricks_grey.png",
+        bush: "assets/kenney_new_platformer/Sprites/Tiles/Double/bush.png",
+        rock: "assets/kenney_new_platformer/Sprites/Tiles/Double/rock.png",
+        mushroom: "assets/kenney_new_platformer/Sprites/Tiles/Double/mushroom_red.png",
+        signRight: "assets/kenney_new_platformer/Sprites/Tiles/Double/sign_right.png",
+        checkpointA: "assets/kenney_new_platformer/Sprites/Tiles/Double/flag_yellow_a.png",
+        checkpointB: "assets/kenney_new_platformer/Sprites/Tiles/Double/flag_yellow_b.png",
+        gateClosed: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_closed.png",
+        gateClosedTop: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_closed_top.png",
+        gateOpen: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_open.png",
+        gateOpenTop: "assets/kenney_new_platformer/Sprites/Tiles/Double/door_open_top.png",
+        spikes: "assets/kenney_new_platformer/Sprites/Tiles/Double/saw.png",
+        torchA: "assets/kenney_new_platformer/Sprites/Tiles/Double/torch_on_a.png",
+        torchB: "assets/kenney_new_platformer/Sprites/Tiles/Double/torch_on_b.png"
+      },
+      enemies: {
+        waterA: "assets/kenney_new_platformer/Sprites/Enemies/Double/snail_walk_a.png",
+        waterB: "assets/kenney_new_platformer/Sprites/Enemies/Double/snail_walk_b.png",
+        forestA: "assets/kenney_new_platformer/Sprites/Enemies/Double/mouse_walk_a.png",
+        forestB: "assets/kenney_new_platformer/Sprites/Enemies/Double/mouse_walk_b.png",
+        towerA: "assets/kenney_new_platformer/Sprites/Enemies/Double/slime_normal_walk_a.png",
+        towerB: "assets/kenney_new_platformer/Sprites/Enemies/Double/slime_normal_walk_b.png"
+      }
+    };
+
+    const ART = {};
+
+    const game = {
+      scene: "Title",
+      player: null,
+      inventory: { runes: 0, key: false, wand: false },
+      hearts: 3,
+      maxHearts: 3,
+      pet: null,
+      gateStates: { lobby: false, water: false, workshop: false, tower: false },
+      sideQuestStates: { lobby: false, water: false, forest: false, workshop: false, tower: false },
+      bossState: { active: false, defeated: false, roundIndex: 0, hp: 4, maxHp: 4, mistakes: 0, cooldown: 0, nextAttack: 1.4, fireballs: [], hitFlash: 0, introPlayed: false, cutsceneActive: false, cutsceneWords: [], cutsceneTimer: 0, cutsceneStep: 0, wordQueue: [], fall: 0, vanish: 0 },
+      dialogQueue: [],
+      dialogActive: false,
+      quizActive: false,
+      paused: false,
+      camera: { x: 0, y: 0 },
+      lastCheckpoint: null,
+      lastTick: 0,
+      touchAxisX: 0,
+      invuln: 0,
+      pupShield: false,
+      pupPos: { x: 0, y: 0 },
+      facing: 1,
+      fx: [],
+      promptText: "",
+      promptTimer: 0,
+      quizHandler: null,
+      quizRound: null,
+      musicReady: false,
+      cheatBuffer: []
+    };
+
+    const CHEAT_NEXT_LEVEL = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown"];
+    const CHEAT_PREV_LEVEL = ["ArrowDown", "ArrowDown", "ArrowUp", "ArrowUp"];
+    const SCENE_ORDER = ["Lodge Lobby", "Water Park", "Forest Trail", "Inventor Workshop", "Magi Tower", "Boss Arena", "Victory"];
+    const SCENE_SPAWNS = {
+      "Lodge Lobby": { x: 100, y: 400 },
+      "Water Park": { x: 60, y: 420 },
+      "Forest Trail": { x: 60, y: 420 },
+      "Inventor Workshop": { x: 60, y: 420 },
+      "Magi Tower": { x: 60, y: 420 },
+      "Boss Arena": { x: 100, y: 420 },
+      "Victory": { x: 100, y: 420 }
+    };
+
+    const MUSIC = {
+      ctx: null,
+      master: null,
+      pad: null,
+      lead: null,
+      bass: null,
+      tremolo: null,
+      pulse: null,
+      started: false,
+      nextNoteAt: 0,
+      step: 0,
+      mutedForQuiz: false,
+      currentThemeName: "",
+      section: 0
+    };
+
+    const MUSIC_VOLUME = 0.036;
+
+    function noteRatio(semitones) {
+      return Math.pow(2, semitones / 12);
+    }
+
+    const MUSIC_PATTERNS = {
+      lodge: {
+        root: 261.63,
+        beat: 0.34,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-12), noteRatio(-5), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(-5)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-2), noteRatio(-12)]
+          }
+        ]
+      },
+      water: {
+        root: 293.66,
+        beat: 0.33,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-7), noteRatio(-12)]
+          }
+        ]
+      },
+      forest: {
+        root: 220,
+        beat: 0.36,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-9), noteRatio(-5), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-9), noteRatio(-12)]
+          }
+        ]
+      },
+      workshop: {
+        root: 246.94,
+        beat: 0.33,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(7)],
+            lead: [noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(-7)]
+          }
+        ]
+      },
+      tower: {
+        root: 233.08,
+        beat: 0.35,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(0)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(7)],
+            lead: [noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(-7)]
+          }
+        ]
+      },
+      boss: {
+        root: 220,
+        beat: 0.24,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(3)],
+            lead: [noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(0), noteRatio(-2), noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(3), noteRatio(2)],
+            bass: [noteRatio(-12), noteRatio(-12), noteRatio(-10), noteRatio(-12)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(3), noteRatio(7), noteRatio(8)],
+            lead: [noteRatio(0), noteRatio(2), noteRatio(3), noteRatio(5), noteRatio(7), noteRatio(5), noteRatio(7), noteRatio(8), noteRatio(7), noteRatio(5), noteRatio(3), noteRatio(5), noteRatio(3), noteRatio(2), noteRatio(0), noteRatio(-2)],
+            bass: [noteRatio(-12), noteRatio(-10), noteRatio(-8), noteRatio(-12)]
+          }
+        ]
+      },
+      victory: {
+        root: 329.63,
+        beat: 0.34,
+        sections: [
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(7), noteRatio(12)],
+            lead: [noteRatio(4), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(4), noteRatio(2), noteRatio(2), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-7), noteRatio(-5), noteRatio(0)]
+          },
+          {
+            pad: [noteRatio(0), noteRatio(5), noteRatio(9), noteRatio(12)],
+            lead: [noteRatio(7), noteRatio(7), noteRatio(9), noteRatio(7), noteRatio(5), noteRatio(5), noteRatio(4), noteRatio(2), noteRatio(0), noteRatio(2), noteRatio(4), noteRatio(5), noteRatio(7), noteRatio(5), noteRatio(4), noteRatio(0)],
+            bass: [noteRatio(-12), noteRatio(-5), noteRatio(-3), noteRatio(0)]
+          }
+        ]
+      }
+    };
+
+    const PETS = {
+      pinePup: {
+        id: "pinePup",
+        name: "Pine Pup",
+        graceBonus: 0.12
+      }
+    };
+
+    const SPELLING_GATES = {
+      lobby: [
+        {
+          word: "blonde",
+          definition: "having light yellow hair",
+          sentence: "The blonde wizard wore a bright blue cape.",
+          displaySentence: "The ____ wizard wore a bright blue cape.",
+          hints: ["It starts with \"bl\".", "It has \"on\" in the middle.", "It ends with \"de\"."]
+        },
+        {
+          word: "soccer",
+          definition: "a game where players kick a ball toward a goal",
+          sentence: "We played soccer outside after school.",
+          displaySentence: "We played ____ outside after school.",
+          hints: ["It starts with \"s\".", "It has double c in the middle.", "It ends with \"er\"."]
+        }
+      ],
+      water: [
+        {
+          word: "chicken",
+          definition: "a farm bird with feathers and wings",
+          sentence: "The chicken pecked near the fence.",
+          displaySentence: "The ____ pecked near the fence.",
+          hints: ["It starts with \"ch\".", "It has \"ick\" in the middle.", "It ends with \"en\"."]
+        },
+        {
+          word: "panda",
+          definition: "a black-and-white bear that likes bamboo",
+          sentence: "The panda munched crunchy bamboo.",
+          displaySentence: "The ____ munched crunchy bamboo.",
+          hints: ["It starts with \"p\".", "It has \"and\" in the middle.", "It ends with \"a\"."]
+        }
+      ],
+      workshop: [
+        {
+          word: "inventor",
+          definition: "a person who creates something new",
+          sentence: "The inventor built a clever machine.",
+          displaySentence: "The ____ built a clever machine.",
+          hints: ["It starts with \"in\".", "It has \"vent\" in the middle.", "It ends with \"or\"."]
+        },
+        {
+          word: "engineer",
+          definition: "a person who designs and builds things",
+          sentence: "The engineer fixed the bridge plan.",
+          displaySentence: "The ____ fixed the bridge plan.",
+          hints: ["It starts with \"en\".", "It has \"gin\" in the middle.", "It ends with \"eer\"."]
+        }
+      ],
+      tower: [
+        {
+          word: "piano",
+          definition: "a musical instrument with black and white keys",
+          sentence: "She played the piano at recital time.",
+          displaySentence: "She played the ____ at recital time.",
+          hints: ["It starts with \"p\".", "It has \"ian\" in the middle.", "It ends with \"o\"."]
+        },
+        {
+          word: "music",
+          definition: "organized sound with rhythm and melody",
+          sentence: "Music floated through the tower hall.",
+          displaySentence: "____ floated through the tower hall.",
+          hints: ["It starts with \"m\".", "It has \"us\" in the middle.", "It ends with \"ic\"."]
+        }
+      ],
+      boss: [
+        {
+          word: "blonde",
+          definition: "having light yellow hair",
+          sentence: "The blonde wizard wore a bright blue cape.",
+          displaySentence: "The ____ wizard wore a bright blue cape.",
+          hints: ["It starts with \"bl\".", "It has \"on\" in the middle.", "It ends with \"de\"."]
+        },
+        {
+          word: "soccer",
+          definition: "a game where players kick a ball toward a goal",
+          sentence: "We played soccer outside after school.",
+          displaySentence: "We played ____ outside after school.",
+          hints: ["It starts with \"s\".", "It has double c in the middle.", "It ends with \"er\"."]
+        },
+        {
+          word: "chicken",
+          definition: "a farm bird with feathers and wings",
+          sentence: "The chicken pecked near the fence.",
+          displaySentence: "The ____ pecked near the fence.",
+          hints: ["It starts with \"ch\".", "It has \"ick\" in the middle.", "It ends with \"en\"."]
+        },
+        {
+          word: "panda",
+          definition: "a black-and-white bear that likes bamboo",
+          sentence: "The panda munched crunchy bamboo.",
+          displaySentence: "The ____ munched crunchy bamboo.",
+          hints: ["It starts with \"p\".", "It has \"and\" in the middle.", "It ends with \"a\"."]
+        },
+        {
+          word: "inventor",
+          definition: "a person who creates something new",
+          sentence: "The inventor built a clever machine.",
+          displaySentence: "The ____ built a clever machine.",
+          hints: ["It starts with \"in\".", "It has \"vent\" in the middle.", "It ends with \"or\"."]
+        },
+        {
+          word: "engineer",
+          definition: "a person who designs and builds things",
+          sentence: "The engineer fixed the bridge plan.",
+          displaySentence: "The ____ fixed the bridge plan.",
+          hints: ["It starts with \"en\".", "It has \"gin\" in the middle.", "It ends with \"eer\"."]
+        },
+        {
+          word: "piano",
+          definition: "a musical instrument with black and white keys",
+          sentence: "She played the piano at recital time.",
+          displaySentence: "She played the ____ at recital time.",
+          hints: ["It starts with \"p\".", "It has \"ian\" in the middle.", "It ends with \"o\"."]
+        },
+        {
+          word: "music",
+          definition: "organized sound with rhythm and melody",
+          sentence: "Music floated through the tower hall.",
+          displaySentence: "____ floated through the tower hall.",
+          hints: ["It starts with \"m\".", "It has \"us\" in the middle.", "It ends with \"ic\"."]
+        },
+        {
+          word: "tennis",
+          definition: "a sport where players hit a ball back and forth",
+          sentence: "We watched a tennis match on TV.",
+          displaySentence: "We watched a ____ match on TV.",
+          hints: ["It starts with \"t\".", "It has double n in the middle.", "It ends with \"is\"."]
+        },
+        {
+          word: "harrypotter",
+          definition: "the wizard hero from a famous book series",
+          sentence: "Harry Potter learned spells at wizard school.",
+          displaySentence: "_____ ______ learned spells at wizard school.",
+          hints: ["Type the two names together.", "It starts with \"harry\".", "It ends with \"potter\"."],
+          answerLabel: "Harry Potter"
+        }
+      ]
+    };
+
+    const STEM_QUESTS = {
+      lobby: {
+        id: "lobby",
+        prompt: { x: 1040, y: 438, w: 72, h: 64 },
+        title: "Science Side Quest",
+        questions: [
+          {
+            body: "Your plant looks droopy. What should you pour on it to help it grow?",
+            answer: "Water",
+            choices: ["Water", "Sand", "Paper"],
+            hints: ["Plants need a drink.", "It comes out of a faucet."]
+          },
+          {
+            body: "A plant grows best when it gets light from the sky. Which thing does it need?",
+            answer: "Sunlight",
+            choices: ["Sunlight", "A pillow", "A flashlight toy"],
+            hints: ["It comes from the sun.", "Plants use it to grow."]
+          },
+          {
+            body: "Where do roots usually grow for a garden plant?",
+            answer: "Soil",
+            choices: ["Soil", "Ice", "A bookshelf"],
+            hints: ["It is dirt for plants.", "It starts with \"s\"."]
+          },
+          {
+            body: "Which part of a plant is usually green and helps catch sunlight?",
+            answer: "Leaves",
+            choices: ["Leaves", "Shoes", "Bubbles"],
+            hints: ["They grow on stems and branches.", "They are often green."]
+          }
+        ],
+        reward: "+1 max heart"
+      },
+      water: {
+        id: "water",
+        prompt: { x: 980, y: 248, w: 72, h: 64 },
+        title: "Math Side Quest",
+        questions: [
+          {
+            body: "Two kids are waiting for the slide. Three more come over. How many kids are there now?",
+            answer: "5",
+            choices: ["4", "5", "6"],
+            hints: ["Count on from 2.", "It is one more than 4."]
+          },
+          {
+            body: "You see 7 floaties in the pool. Two float away. How many are left?",
+            answer: "5",
+            choices: ["3", "5", "9"],
+            hints: ["Start at 7 and count back 2.", "The answer is less than 7."]
+          },
+          {
+            body: "A team has 4 red beach balls and 4 blue beach balls. How many balls are there in all?",
+            answer: "8",
+            choices: ["6", "8", "9"],
+            hints: ["4 plus 4.", "It is one more than 7."]
+          },
+          {
+            body: "There are 10 water slides. One is closed. How many are open?",
+            answer: "9",
+            choices: ["8", "9", "10"],
+            hints: ["10 minus 1.", "It is almost all of them."]
+          }
+        ],
+        reward: "+1 max heart"
+      },
+      forest: {
+        id: "forest",
+        prompt: { x: 1160, y: 438, w: 72, h: 64 },
+        title: "Engineering Side Quest",
+        questions: [
+          {
+            body: "Builders use one strong shape again and again in bridges. Which shape is it?",
+            answer: "Triangle",
+            choices: ["Triangle", "Circle", "Squiggle"],
+            hints: ["It has 3 sides.", "Builders use this shape for support."]
+          },
+          {
+            body: "Which material would help make a bridge feel strong?",
+            answer: "Wood",
+            choices: ["Wood", "Marshmallows", "Pillows"],
+            hints: ["You can build with it.", "Trees are used to make it."]
+          },
+          {
+            body: "If a tower keeps tipping over, what can help it stay up better?",
+            answer: "A wider base",
+            choices: ["A wider base", "Less support", "More wobbling"],
+            hints: ["The bottom should be stronger.", "It means the bottom is not skinny."]
+          },
+          {
+            body: "What do engineers usually do first before building something big?",
+            answer: "Make a plan",
+            choices: ["Make a plan", "Guess", "Throw it"],
+            hints: ["They draw and think first.", "It helps them know what to build."]
+          }
+        ],
+        reward: "+1 max heart"
+      },
+      workshop: {
+        id: "workshop",
+        prompt: { x: 1240, y: 248, w: 72, h: 64 },
+        title: "Chemistry Side Quest",
+        questions: [
+          {
+            body: "A block of ice sits in the warm sun. What does it turn into after it melts?",
+            answer: "Water",
+            choices: ["Water", "Rock", "Smoke"],
+            hints: ["It is a liquid.", "You drink it."]
+          },
+          {
+            body: "What happens to water if it gets very, very cold?",
+            answer: "It freezes",
+            choices: ["It freezes", "It becomes sand", "It disappears forever"],
+            hints: ["It turns solid.", "Ice is an example."]
+          },
+          {
+            body: "When you mix red paint and yellow paint, what new color do you get?",
+            answer: "Orange",
+            choices: ["Orange", "Purple", "Brown"],
+            hints: ["It is the color of many pumpkins.", "It is between red and yellow."]
+          },
+          {
+            body: "Which one is a liquid?",
+            answer: "Juice",
+            choices: ["Juice", "Brick", "Pencil"],
+            hints: ["You can pour it.", "You might drink it at lunch."]
+          }
+        ],
+        reward: "+1 max heart"
+      },
+      tower: {
+        id: "tower",
+        prompt: { x: 760, y: 338, w: 72, h: 64 },
+        title: "STEM Side Quest",
+        questions: [
+          {
+            body: "What tool can pull a paper clip without touching it?",
+            answer: "Magnet",
+            choices: ["Magnet", "Feather", "Pencil"],
+            hints: ["It sticks to some metal things.", "It starts with \"m\"."]
+          },
+          {
+            body: "Which tool would help you look closely at a bug?",
+            answer: "Magnifying glass",
+            choices: ["Magnifying glass", "Spoon", "Blanket"],
+            hints: ["It makes things look bigger.", "Detectives sometimes use one."]
+          },
+          {
+            body: "Which one is a machine?",
+            answer: "Bicycle",
+            choices: ["Bicycle", "Apple", "Cloud"],
+            hints: ["It has moving parts.", "You can ride it."]
+          },
+          {
+            body: "If you want to measure how long a table is, what should you use?",
+            answer: "Ruler",
+            choices: ["Ruler", "Pillow", "Crayon"],
+            hints: ["It measures length.", "It often has inches on it."]
+          }
+        ],
+        reward: "+1 max heart"
+      }
+    };
+
+    const SCENES = {
+      Title: { name: "Title" },
+      "Lodge Lobby": {
+        name: "Lodge Lobby",
+        width: 1600,
+        height: 576,
+        background: { top: "#cfe9ff", bottom: "#78b7ff" },
+        platforms: [
+          { x: 0, y: 500, w: 1600, h: 76, type: "ground" },
+          { x: 280, y: 420, w: 180, h: 22, type: "wood" },
+          { x: 560, y: 360, w: 200, h: 22, type: "wood" },
+          { x: 880, y: 310, w: 160, h: 22, type: "wood" }
+        ],
+        petSpot: { x: 520, y: 330, w: 60, h: 60, prompted: false },
+        runes: [
+          { x: 330, y: 380, collected: false },
+          { x: 640, y: 320, collected: false },
+          { x: 940, y: 270, collected: false }
+        ],
+        gates: [
+          { id: "lobby", x: 1400, y: 350, w: 90, h: 150, label: "Rune Gate" }
+        ],
+        dialogs: [
+          { x: 140, y: 430, w: 80, h: 80, title: "Caretaker", text: "Collect three glowing runes. The gate will ask you to spot the correct spelling words." },
+          { x: 460, y: 360, w: 80, h: 80, title: "Pine Pup", text: "A Pine Pup is waiting on the balcony. Press E to befriend it." },
+          { x: 980, y: 420, w: 110, h: 80, title: "Garden Table", text: "Optional science challenge ahead. Solve it for a heart upgrade." }
+        ],
+        sideQuest: STEM_QUESTS.lobby,
+        exits: [
+          { x: 1500, y: 350, w: 80, h: 150, target: "Water Park", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Water Park": {
+        name: "Water Park",
+        width: 1800,
+        height: 576,
+        background: { top: "#bfe9ff", bottom: "#5db4ff" },
+        platforms: [
+          { x: 0, y: 510, w: 1800, h: 66, type: "ground" },
+          { x: 240, y: 420, w: 200, h: 18, type: "stone" },
+          { x: 560, y: 360, w: 220, h: 18, type: "stone" },
+          { x: 920, y: 310, w: 220, h: 18, type: "stone" },
+          { x: 1240, y: 260, w: 200, h: 18, type: "stone" },
+          { x: 1460, y: 350, w: 120, h: 18, type: "stone" }
+        ],
+        hazards: [
+          { x: 420, y: 470, w: 60, h: 20, vx: 80 },
+          { x: 760, y: 470, w: 60, h: 20, vx: -100 }
+        ],
+        enemies: [
+          { x: 520, y: 468, w: 32, h: 32, vx: 50, minX: 420, maxX: 720 },
+          { x: 1120, y: 278, w: 32, h: 32, vx: -45, minX: 920, maxX: 1360 }
+        ],
+        keyItem: { x: 1320, y: 220, collected: false },
+        gates: [
+          { id: "water", x: 1640, y: 350, w: 90, h: 150, label: "Key Gate" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Lifeguard", text: "Watch the floaters. Grab the golden key near the slides." },
+          { x: 900, y: 250, w: 90, h: 60, title: "Splash Lab", text: "Try the optional math challenge to grow your heart meter." }
+        ],
+        sideQuest: STEM_QUESTS.water,
+        exits: [
+          { x: 1700, y: 350, w: 80, h: 150, target: "Forest Trail", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Forest Trail": {
+        name: "Forest Trail",
+        width: 1800,
+        height: 576,
+        background: { top: "#bfe8d0", bottom: "#59ad7a" },
+        platforms: [
+          { x: 0, y: 510, w: 1800, h: 66, type: "ground" },
+          { x: 280, y: 410, w: 200, h: 20, type: "wood" },
+          { x: 620, y: 350, w: 200, h: 20, type: "wood" },
+          { x: 980, y: 300, w: 200, h: 20, type: "wood" },
+          { x: 1260, y: 250, w: 160, h: 20, type: "wood" },
+          { x: 1490, y: 340, w: 130, h: 20, type: "wood" }
+        ],
+        checkpoints: [
+          { id: "trail-1", x: 260, y: 450, w: 50, h: 60 },
+          { id: "trail-2", x: 980, y: 450, w: 50, h: 60 }
+        ],
+        enemies: [
+          { x: 420, y: 468, w: 34, h: 34, vx: 45, minX: 320, maxX: 620 },
+          { x: 1080, y: 268, w: 34, h: 34, vx: -50, minX: 980, maxX: 1180 }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Forest Spirit", text: "The trail is calmer with Pine Pup at your side." },
+          { x: 1120, y: 430, w: 100, h: 70, title: "Bridge Builder", text: "There is an optional engineering clue near the glowing sign." }
+        ],
+        sideQuest: STEM_QUESTS.forest,
+        exits: [
+          { x: 1700, y: 350, w: 80, h: 150, target: "Inventor Workshop", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Inventor Workshop": {
+        name: "Inventor Workshop",
+        width: 1960,
+        height: 576,
+        background: { top: "#fff0cf", bottom: "#c9894d" },
+        platforms: [
+          { x: 0, y: 510, w: 1960, h: 66, type: "ground" },
+          { x: 190, y: 430, w: 140, h: 18, type: "stone" },
+          { x: 410, y: 360, w: 120, h: 18, type: "wood" },
+          { x: 620, y: 290, w: 110, h: 18, type: "stone" },
+          { x: 860, y: 350, w: 170, h: 18, type: "wood" },
+          { x: 1130, y: 270, w: 160, h: 18, type: "stone" },
+          { x: 1380, y: 220, w: 120, h: 18, type: "wood" },
+          { x: 1560, y: 320, w: 180, h: 18, type: "stone" }
+        ],
+        hazards: [
+          { x: 540, y: 470, w: 60, h: 20, vx: 70 },
+          { x: 1470, y: 470, w: 60, h: 20, vx: -80 }
+        ],
+        enemies: [
+          { x: 270, y: 398, w: 34, h: 34, vx: 50, minX: 190, maxX: 330 },
+          { x: 900, y: 318, w: 34, h: 34, vx: -48, minX: 860, maxX: 1030 },
+          { x: 1590, y: 288, w: 34, h: 34, vx: 52, minX: 1560, maxX: 1740 }
+        ],
+        gates: [
+          { id: "workshop", x: 1820, y: 350, w: 90, h: 150, label: "Workshop Gate" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Inventor Owl", text: "This workshop is full of gadgets. Climb the machines and solve the engineer words." },
+          { x: 1190, y: 230, w: 100, h: 70, title: "Mixer Table", text: "Optional chemistry clue here. Solve it for more hearts." }
+        ],
+        sideQuest: STEM_QUESTS.workshop,
+        exits: [
+          { x: 1900, y: 350, w: 60, h: 150, target: "Magi Tower", spawn: { x: 60, y: 420 } }
+        ]
+      },
+      "Magi Tower": {
+        name: "Magi Tower",
+        width: 1600,
+        height: 576,
+        background: { top: "#e2d5ff", bottom: "#7f6fc1" },
+        platforms: [
+          { x: 0, y: 510, w: 1600, h: 66, type: "ground" },
+          { x: 260, y: 420, w: 200, h: 20, type: "stone" },
+          { x: 600, y: 360, w: 200, h: 20, type: "stone" },
+          { x: 920, y: 300, w: 200, h: 20, type: "stone" }
+        ],
+        wandItem: { x: 980, y: 260, collected: false },
+        enemies: [
+          { x: 320, y: 468, w: 36, h: 36, vx: 55, minX: 260, maxX: 520 },
+          { x: 760, y: 468, w: 36, h: 36, vx: -55, minX: 640, maxX: 980 }
+        ],
+        gates: [
+          { id: "tower", x: 1380, y: 350, w: 90, h: 150, label: "Tower Gate" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 90, h: 60, title: "Tower Guide", text: "The wand is above. The gate tests the last tower spelling words before the boss." },
+          { x: 720, y: 320, w: 100, h: 70, title: "Tower Lab", text: "There is an optional STEM challenge under the middle platform." }
+        ],
+        sideQuest: STEM_QUESTS.tower,
+        exits: [
+          { x: 1500, y: 350, w: 80, h: 150, target: "Boss Arena", spawn: { x: 100, y: 420 } }
+        ]
+      },
+      "Boss Arena": {
+        name: "Boss Arena",
+        width: 1500,
+        height: 576,
+        background: { top: "#2f2440", bottom: "#9a4d33" },
+        platforms: [
+          { x: 0, y: 510, w: 1500, h: 66, type: "ground" },
+          { x: 260, y: 420, w: 180, h: 18, type: "stone" },
+          { x: 520, y: 340, w: 150, h: 18, type: "stone" },
+          { x: 760, y: 280, w: 150, h: 18, type: "stone" }
+        ],
+        dialogs: [
+          { x: 120, y: 440, w: 110, h: 70, title: "Boss Warning", text: "Use the wand circle to cast spelling spells. Two misses and the boss wins." }
+        ],
+        boss: {
+          body: { x: 1120, y: 220, w: 220, h: 220 },
+          altar: { x: 860, y: 410, w: 84, h: 84 },
+          hp: 4,
+          name: "Stormshell Rex"
+        },
+        exits: [
+          { x: 1410, y: 340, w: 70, h: 160, target: "Victory", spawn: { x: 100, y: 420 }, requiresBoss: true }
+        ]
+      },
+      Victory: {
+        name: "Victory",
+        width: 1024,
+        height: 576,
+        background: { top: "#fff3c8", bottom: "#f7b76b" },
+        platforms: [ { x: 0, y: 510, w: 1024, h: 66, type: "ground" } ],
+        dialogs: []
+      }
+    };
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+    function createPlayer(spawn) {
+      return {
+        x: spawn.x,
+        y: spawn.y,
+        w: 36,
+        h: 52,
+        vx: 0,
+        vy: 0,
+        speed: 280,
+        jumpPower: 720,
+        gravity: 2200,
+        onGround: false,
+        coyote: 0,
+        jumpBuffer: 0
+      };
+    }
+
+    function getQuestInfo() {
+      if (game.scene === "Title") {
+        return {
+          title: "Begin the quest",
+          copy: "Start a new adventure and explore the lodge for your first three runes."
+        };
+      }
+      if (game.scene === "Lodge Lobby") {
+        return {
+          title: game.inventory.runes < 3 ? "Gather the lodge runes" : "Open the rune gate",
+          copy: game.inventory.runes < 3
+            ? `Find the 3 glowing runes. You have ${game.inventory.runes}/3 so far.`
+            : "Head to the glowing gate on the far right and clear the first spelling challenge. The science side quest is optional."
+        };
+      }
+      if (game.scene === "Water Park") {
+        return {
+          title: game.inventory.key ? "Unlock the water gate" : "Find the Golden Key",
+          copy: game.inventory.key
+            ? "The key is yours. Reach the gate at the far end and finish the next spelling words."
+            : "Hop past floater hazards, grab the Golden Key, and look for the optional math challenge."
+        };
+      }
+      if (game.scene === "Forest Trail") {
+        return {
+          title: "Follow the forest trail",
+          copy: "Touch the checkpoint banners, stomp critters, and find the optional engineering side quest."
+        };
+      }
+      if (game.scene === "Inventor Workshop") {
+        return {
+          title: game.gateStates.workshop ? "Head for the tower" : "Conquer the workshop gate",
+          copy: game.gateStates.workshop
+            ? "The inventors' gate is open. Keep climbing toward the Magi Tower."
+            : "Leap across machines, clear the engineer words, and solve the chemistry side quest for bonus health."
+        };
+      }
+      if (game.scene === "Magi Tower") {
+        return {
+          title: game.inventory.wand ? "Finish the tower gate" : "Claim the tower wand",
+          copy: game.inventory.wand
+            ? "The wand is glowing. Reach the final gate, clear the tower words, then face the boss."
+            : "Climb the tower steps, dodge the critters, grab the wand, and check the optional STEM clue."
+        };
+      }
+      if (game.scene === "Boss Arena") {
+        return {
+          title: game.bossState.defeated ? "Escape to victory" : "Defeat Stormshell Rex",
+          copy: game.bossState.defeated
+            ? "The boss is down. Walk to the glowing exit and celebrate."
+            : `Use the wand circle to cast spelling attacks. Boss HP ${game.bossState.hp}/${game.bossState.maxHp}. Two mistakes means defeat.`
+        };
+      }
+      return {
+        title: "Celebrate the victory",
+        copy: "You beat the boss and finished the upgraded prototype adventure."
+      };
+    }
+
+    function setPrompt(text) {
+      game.promptText = text || "";
+      hud.prompt.textContent = game.promptText;
+      hud.prompt.classList.toggle("visible", !!game.promptText);
+    }
+
+    function setHUD() {
+      const quest = getQuestInfo();
+      hud.scene.textContent = game.scene || "?";
+      hud.questTitle.textContent = quest.title;
+      hud.questCopy.textContent = quest.copy;
+      hud.hearts.innerHTML = "";
+      for (let i = 0; i < game.maxHearts; i += 1) {
+        const filled = i < game.hearts;
+        hud.hearts.appendChild(createHudIcon(filled ? ART.hud.heart : ART.hud.heartEmpty, "icon heart", filled ? 1 : 0.75));
+      }
+      hud.heartsValue.textContent = `${game.hearts}/${game.maxHearts}`;
+      hud.runes.innerHTML = "";
+      for (let i = 0; i < 3; i += 1) {
+        hud.runes.appendChild(createHudIcon(ART.pickups.rune, "icon rune", i < game.inventory.runes ? 1 : 0.25));
+      }
+      hud.runesValue.textContent = `${game.inventory.runes}/3`;
+      hud.key.innerHTML = "";
+      const keyEl = createHudIcon(ART.hud.key, "icon key", game.inventory.key ? 1 : 0.25);
+      hud.key.appendChild(keyEl);
+      hud.keyValue.textContent = game.inventory.key ? "Yes" : "No";
+      hud.wand.innerHTML = "";
+      const wandEl = createHudIcon(ART.pickups.wand, "icon wand", game.inventory.wand ? 1 : 0.25);
+      hud.wand.appendChild(wandEl);
+      hud.wandValue.textContent = game.inventory.wand ? "Yes" : "No";
+      hud.pet.innerHTML = "";
+      const petEl = createHudIcon(ART.hud.pet, "icon pet", game.pet ? 1 : 0.25);
+      hud.pet.appendChild(petEl);
+      hud.petValue.textContent = game.pet ? PETS[game.pet].name : "None";
+    }
+
+    function spawnFx(options) {
+      const burst = options || {};
+      const count = burst.count || 10;
+      const spread = burst.spread || 1;
+      const baseVy = burst.vy || -90;
+      for (let i = 0; i < count; i += 1) {
+        const angle = (Math.PI * 2 * i) / count;
+        const speed = 40 + Math.random() * 90 * spread;
+        game.fx.push({
+          x: burst.x,
+          y: burst.y,
+          vx: Math.cos(angle) * speed * 0.4,
+          vy: baseVy + Math.sin(angle) * speed * 0.25,
+          life: burst.life || 0.75,
+          maxLife: burst.life || 0.75,
+          color: burst.color || "#ffe38f",
+          radius: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function updateFx(dt) {
+      game.fx = game.fx.map(fx => {
+        fx.life -= dt;
+        fx.x += fx.vx * dt;
+        fx.y += fx.vy * dt;
+        fx.vy += 220 * dt;
+        return fx;
+      }).filter(fx => fx.life > 0);
+    }
+
+    function drawFx(cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      game.fx.forEach(fx => {
+        const alpha = fx.life / fx.maxLife;
+        ctx.fillStyle = hexToRgba(fx.color, alpha);
+        ctx.beginPath();
+        ctx.arc(fx.x, fx.y, fx.radius * alpha + 1, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function hexToRgba(hex, alpha) {
+      const normalized = hex.replace("#", "");
+      const value = normalized.length === 3
+        ? normalized.split("").map(part => part + part).join("")
+        : normalized;
+      const int = parseInt(value, 16);
+      const r = (int >> 16) & 255;
+      const g = (int >> 8) & 255;
+      const b = int & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function loadImage(src) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function loadAssetGroup(group, target) {
+      const entries = Object.entries(group);
+      const loaded = await Promise.all(entries.map(async ([key, src]) => [key, await loadImage(src)]));
+      loaded.forEach(([key, img]) => {
+        target[key] = img;
+      });
+    }
+
+    async function preloadArt() {
+      ART.backgrounds = {};
+      ART.player = {};
+      ART.pickups = {};
+      ART.hud = {};
+      ART.props = {};
+      ART.enemies = {};
+      await Promise.all([
+        loadAssetGroup(SPRITES.backgrounds, ART.backgrounds),
+        loadAssetGroup(SPRITES.player, ART.player),
+        loadAssetGroup(SPRITES.pickups, ART.pickups),
+        loadAssetGroup(SPRITES.hud, ART.hud),
+        loadAssetGroup(SPRITES.props, ART.props),
+        loadAssetGroup(SPRITES.enemies, ART.enemies)
+      ]);
+    }
+
+    function drawImageFit(img, x, y, w, h) {
+      if (!img) return false;
+      ctx.drawImage(img, x, y, w, h);
+      return true;
+    }
+
+    function tileImageX(img, x, y, w, h, tileW, tileH) {
+      if (!img) return false;
+      const stepX = tileW || img.width;
+      const stepY = tileH || img.height;
+      for (let px = x; px < x + w; px += stepX) {
+        for (let py = y; py < y + h; py += stepY) {
+          ctx.drawImage(img, px, py, Math.min(stepX, x + w - px), Math.min(stepY, y + h - py));
+        }
+      }
+      return true;
+    }
+
+    function createHudIcon(img, className, opacity) {
+      const el = document.createElement("div");
+      el.className = className;
+      el.style.opacity = `${opacity ?? 1}`;
+      if (img) {
+        el.style.backgroundImage = `url("${img.src}")`;
+      }
+      return el;
+    }
+
+    function showDialog(title, body) {
+      game.dialogActive = true;
+      overlays.dialogTitle.textContent = title;
+      overlays.dialogBody.textContent = body;
+      overlays.dialog.style.display = "grid";
+    }
+
+    function quickDialog(title, body, durationMs) {
+      showDialog(title, body);
+      const delay = durationMs || 900;
+      window.setTimeout(() => {
+        if (!game.dialogActive) return;
+        if (overlays.dialogTitle.textContent !== title) return;
+        game.dialogActive = false;
+        overlays.dialog.style.display = "none";
+      }, delay);
+    }
+
+    function nextDialog() {
+      if (game.dialogQueue.length === 0) {
+        game.dialogActive = false;
+        overlays.dialog.style.display = "none";
+        return;
+      }
+      const item = game.dialogQueue.shift();
+      showDialog(item.title, item.text);
+    }
+
+    function queueDialog(title, text) {
+      game.dialogQueue.push({ title, text });
+      if (!game.dialogActive) {
+        nextDialog();
+      }
+    }
+
+    function ensureMusic() {
+      if (MUSIC.started) return true;
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextCtor) return false;
+      try {
+        MUSIC.ctx = new AudioContextCtor();
+        MUSIC.master = MUSIC.ctx.createGain();
+        MUSIC.master.gain.value = MUSIC_VOLUME;
+        MUSIC.master.connect(MUSIC.ctx.destination);
+
+        MUSIC.pad = MUSIC.ctx.createOscillator();
+        MUSIC.pad.type = "sine";
+        const padGain = MUSIC.ctx.createGain();
+        padGain.gain.value = 0.014;
+        MUSIC.pad.connect(padGain).connect(MUSIC.master);
+
+        MUSIC.lead = MUSIC.ctx.createOscillator();
+        MUSIC.lead.type = "triangle";
+        const leadGain = MUSIC.ctx.createGain();
+        leadGain.gain.value = 0.0065;
+        MUSIC.lead.connect(leadGain).connect(MUSIC.master);
+
+        MUSIC.bass = MUSIC.ctx.createOscillator();
+        MUSIC.bass.type = "sine";
+        const bassGain = MUSIC.ctx.createGain();
+        bassGain.gain.value = 0.024;
+        MUSIC.bass.connect(bassGain).connect(MUSIC.master);
+
+        MUSIC.tremolo = MUSIC.ctx.createOscillator();
+        MUSIC.tremolo.type = "sine";
+        MUSIC.pulse = MUSIC.ctx.createGain();
+        MUSIC.pulse.gain.value = 2.2;
+        MUSIC.tremolo.connect(MUSIC.pulse);
+        MUSIC.pulse.connect(leadGain.gain);
+        MUSIC.tremolo.frequency.value = 3.1;
+
+        MUSIC.pad.start();
+        MUSIC.lead.start();
+        MUSIC.bass.start();
+        MUSIC.tremolo.start();
+
+        MUSIC.nextNoteAt = MUSIC.ctx.currentTime;
+        MUSIC.step = 0;
+        MUSIC.started = true;
+        game.musicReady = true;
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function getMusicTheme(sceneName) {
+      if (sceneName === "Lodge Lobby") return { name: "lodge", pattern: MUSIC_PATTERNS.lodge };
+      if (sceneName === "Water Park") return { name: "water", pattern: MUSIC_PATTERNS.water };
+      if (sceneName === "Inventor Workshop") return { name: "workshop", pattern: MUSIC_PATTERNS.workshop };
+      if (sceneName === "Magi Tower") return { name: "tower", pattern: MUSIC_PATTERNS.tower };
+      if (sceneName === "Boss Arena") return { name: "boss", pattern: MUSIC_PATTERNS.boss };
+      if (sceneName === "Forest Trail") return { name: "forest", pattern: MUSIC_PATTERNS.forest };
+      if (sceneName === "Victory") return { name: "victory", pattern: MUSIC_PATTERNS.victory };
+      return { name: "lodge", pattern: MUSIC_PATTERNS.lodge };
+    }
+
+    function setMusicMute(muted) {
+      if (!MUSIC.started || !MUSIC.ctx || !MUSIC.master) return;
+      const now = MUSIC.ctx.currentTime;
+      MUSIC.mutedForQuiz = muted;
+      MUSIC.master.gain.cancelScheduledValues(now);
+      MUSIC.master.gain.linearRampToValueAtTime(muted ? 0.001 : MUSIC_VOLUME, now + 0.12);
+    }
+
+    function updateMusic() {
+      if (!MUSIC.started || !MUSIC.ctx) return;
+      if (MUSIC.ctx.state === "suspended" && !game.quizActive && game.scene !== "Title") {
+        MUSIC.ctx.resume().catch(() => {});
+      }
+      if (game.scene === "Title") {
+        setMusicMute(true);
+        return;
+      }
+      if (game.quizActive || game.dialogActive) {
+        setMusicMute(true);
+      } else {
+        setMusicMute(false);
+      }
+
+      const themeInfo = getMusicTheme(game.scene);
+      const theme = themeInfo.pattern || themeInfo;
+      if (MUSIC.currentThemeName !== themeInfo.name) {
+        MUSIC.currentThemeName = themeInfo.name;
+        MUSIC.section = 0;
+        MUSIC.step = 0;
+      }
+      const sectionLength = 16;
+      const sectionIndex = Math.floor(MUSIC.step / sectionLength) % theme.sections.length;
+      const section = theme.sections[sectionIndex];
+      const beat = theme.beat || 0.32;
+      while (MUSIC.nextNoteAt < MUSIC.ctx.currentTime + 0.14) {
+        const step = MUSIC.step;
+        const padRatio = section.pad[step % section.pad.length];
+        const leadRatio = section.lead[step % section.lead.length];
+        const bassRatio = section.bass[step % section.bass.length];
+        const syncopation = step % 8 === 6 ? beat * 0.86 : step % 8 === 7 ? beat * 1.14 : beat;
+        MUSIC.pad.frequency.setValueAtTime(theme.root * padRatio, MUSIC.nextNoteAt);
+        MUSIC.lead.frequency.setValueAtTime(theme.root * leadRatio, MUSIC.nextNoteAt);
+        MUSIC.bass.frequency.setValueAtTime(theme.root * bassRatio, MUSIC.nextNoteAt);
+        MUSIC.nextNoteAt += beat;
+        if (step % 8 === 6 || step % 8 === 7) {
+          MUSIC.nextNoteAt += syncopation - beat;
+        }
+        MUSIC.step += 1;
+      }
+    }
+
+    function speakSpellingRound(round) {
+      if (!round || !("speechSynthesis" in window)) return false;
+      const synth = window.speechSynthesis;
+      try {
+        setMusicMute(true);
+        synth.cancel();
+        const utter = new SpeechSynthesisUtterance(`${round.word}. ${round.sentence}. ${round.word}.`);
+        utter.lang = "en-US";
+        utter.rate = 0.84;
+        utter.pitch = 1;
+        utter.onend = () => {
+          if (!game.quizActive) {
+            setMusicMute(false);
+          }
+        };
+        const voices = synth.getVoices();
+        const preferred = voices.find(voice => voice.lang === "en-US") || voices.find(voice => voice.lang && voice.lang.startsWith("en"));
+        if (preferred) {
+          utter.voice = preferred;
+        }
+        synth.speak(utter);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function setQuizHint(text) {
+      overlays.quizHint.textContent = text || "";
+    }
+
+    function setQuizChoices(round) {
+      overlays.quizChoices.innerHTML = "";
+      if (!round || !round.choices || round.choices.length === 0) {
+        overlays.quizChoices.style.display = "none";
+        return;
+      }
+      overlays.quizChoices.style.display = "grid";
+      round.choices.forEach((choice, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.innerHTML = `<span class="badge">${String.fromCharCode(65 + index)}</span><span>${choice}</span>`;
+        button.addEventListener("click", () => {
+          if (!game.quizHandler) return;
+          game.quizHandler(choice);
+        });
+        overlays.quizChoices.appendChild(button);
+      });
+    }
+
+    function normalizeSpelling(text) {
+      return (text || "").trim().toLowerCase().replace(/[^a-z]/g, "");
+    }
+
+    function normalizeAnswer(text) {
+      return (text || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function getRoundHint(round) {
+      if (!round || !round.hints || round.hints.length === 0) {
+        return "Replay the word and try again.";
+      }
+      const index = Math.min(round.attempts - 1, round.hints.length - 1);
+      return `Hint: ${round.hints[index]}`;
+    }
+
+    function submitQuizGuess() {
+      if (!game.quizActive || !game.quizHandler) return;
+      game.quizHandler(overlays.quizInput.value);
+    }
+
+    function showQuiz(round, title, onResult) {
+      game.quizActive = true;
+      setMusicMute(true);
+      game.quizRound = round;
+      game.quizHandler = onResult;
+      overlays.quizTitle.textContent = title || "Spelling Gate";
+      if (round.body) {
+        overlays.quizBody.innerHTML = round.body;
+      } else {
+        overlays.quizBody.innerHTML = `<strong>Definition:</strong> ${round.definition}<br><strong>Sentence:</strong> ${round.displaySentence}`;
+      }
+      overlays.quizMeta.textContent = round.meta || `${(round.answerLabel || round.word).length} letters`;
+      overlays.quizInput.value = "";
+      const multipleChoice = !!(round.choices && round.choices.length);
+      overlays.quizActions.style.display = multipleChoice ? "none" : "grid";
+      overlays.quizHear.style.display = round.disableAudio || multipleChoice ? "none" : "";
+      setQuizChoices(round);
+      overlays.quizHelp.innerHTML = multipleChoice
+        ? "Choose the best answer."
+        : round.disableAudio
+          ? "<strong>Press Enter</strong> to submit your answer."
+          : "<strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.";
+      const spoke = round.disableAudio ? false : speakSpellingRound(round);
+      setQuizHint(round.initialHint || (spoke ? "Listen to the word, then type the spelling." : "Audio is unavailable here. Use the definition, sentence, and hints."));
+      overlays.quiz.style.display = "grid";
+      requestAnimationFrame(() => {
+        if (!multipleChoice) {
+          overlays.quizInput.focus();
+        }
+      });
+    }
+
+    function closeQuiz() {
+      game.quizActive = false;
+      game.quizHandler = null;
+      game.quizRound = null;
+      overlays.quizInput.value = "";
+      setQuizHint("");
+      overlays.quizActions.style.display = "grid";
+      overlays.quizChoices.innerHTML = "";
+      overlays.quizChoices.style.display = "none";
+      overlays.quizHear.style.display = "";
+      overlays.quizHelp.innerHTML = "<strong>Press Enter</strong> to submit or <strong>R</strong> to replay the word.";
+      overlays.quiz.style.display = "none";
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setMusicMute(false);
+    }
+
+    function saveGame() {
+      const payload = {
+        scene: game.scene,
+        player: { x: game.player.x, y: game.player.y },
+        inventory: game.inventory,
+        hearts: game.hearts,
+        maxHearts: game.maxHearts,
+        pet: game.pet,
+        gateStates: game.gateStates,
+        sideQuestStates: game.sideQuestStates,
+        lastCheckpoint: game.lastCheckpoint,
+        bossState: game.bossState,
+        sceneState: {
+          lobbyRunes: SCENES["Lodge Lobby"].runes.map(r => r.collected),
+          waterKey: SCENES["Water Park"].keyItem.collected,
+          towerWand: SCENES["Magi Tower"].wandItem.collected
+        }
+      };
+      try {
+        localStorage.setItem("magiwolf-save", JSON.stringify(payload));
+      } catch (error) {
+        // Ignore storage failures (e.g., file:// restrictions).
+      }
+    }
+
+    function loadGame() {
+      let raw = null;
+      try {
+        raw = localStorage.getItem("magiwolf-save");
+      } catch (error) {
+        raw = null;
+      }
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      game.scene = data.scene;
+      game.inventory = data.inventory;
+      game.hearts = data.hearts;
+      game.maxHearts = data.maxHearts || 3;
+      game.pet = data.pet;
+      game.gateStates = Object.assign({ lobby: false, water: false, workshop: false, tower: false }, data.gateStates || {});
+      game.sideQuestStates = Object.assign({ lobby: false, water: false, forest: false, workshop: false, tower: false }, data.sideQuestStates || {});
+      game.lastCheckpoint = data.lastCheckpoint;
+      game.bossState = Object.assign(createBossState(SCENES["Boss Arena"].boss.hp), data.bossState || {});
+      const lobbyRunes = SCENES["Lodge Lobby"].runes;
+      if (data.sceneState && data.sceneState.lobbyRunes) {
+        data.sceneState.lobbyRunes.forEach((value, idx) => lobbyRunes[idx].collected = value);
+      }
+      SCENES["Water Park"].keyItem.collected = !!(data.sceneState && data.sceneState.waterKey);
+      SCENES["Magi Tower"].wandItem.collected = !!(data.sceneState && data.sceneState.towerWand);
+      const spawn = data.lastCheckpoint && data.lastCheckpoint.scene === data.scene
+        ? data.lastCheckpoint
+        : data.player;
+      game.player = createPlayer({ x: spawn.x, y: spawn.y });
+      if (game.pet) {
+        game.pupPos.x = game.player.x - 40;
+        game.pupPos.y = game.player.y + 20;
+      }
+      setPrompt("Adventure resumed. Keep heading right.");
+      return true;
+    }
+
+    function resetGame() {
+      game.inventory = { runes: 0, key: false, wand: false };
+      game.hearts = 3;
+      game.maxHearts = 3;
+      game.pet = null;
+      game.gateStates = { lobby: false, water: false, workshop: false, tower: false };
+      game.sideQuestStates = { lobby: false, water: false, forest: false, workshop: false, tower: false };
+      game.bossState = createBossState(SCENES["Boss Arena"].boss.hp);
+      game.lastCheckpoint = null;
+      SCENES["Lodge Lobby"].runes.forEach(r => r.collected = false);
+      SCENES["Water Park"].keyItem.collected = false;
+      SCENES["Magi Tower"].wandItem.collected = false;
+      if (SCENES["Lodge Lobby"].petSpot) {
+        SCENES["Lodge Lobby"].petSpot.prompted = false;
+      }
+      ["Water Park", "Forest Trail", "Inventor Workshop", "Magi Tower"].forEach(name => {
+        const scene = SCENES[name];
+        scene.enemies && scene.enemies.forEach(enemy => enemy.defeated = false);
+        scene.checkpoints && scene.checkpoints.forEach(check => check.active = false);
+      });
+      game.fx = [];
+      enterScene("Lodge Lobby", { x: 100, y: 400 });
+    }
+
+    function unlockProgressThroughScene(sceneName) {
+      if (SCENES["Lodge Lobby"] && ["Water Park", "Forest Trail", "Inventor Workshop", "Magi Tower", "Boss Arena", "Victory"].includes(sceneName)) {
+        game.inventory.runes = 3;
+        game.gateStates.lobby = true;
+        SCENES["Lodge Lobby"].runes.forEach(r => r.collected = true);
+      }
+      if (["Forest Trail", "Inventor Workshop", "Magi Tower", "Boss Arena", "Victory"].includes(sceneName)) {
+        game.inventory.key = true;
+        game.gateStates.water = true;
+        SCENES["Water Park"].keyItem.collected = true;
+      }
+      if (["Magi Tower", "Boss Arena", "Victory"].includes(sceneName)) {
+        game.gateStates.workshop = true;
+      }
+      if (["Boss Arena", "Victory"].includes(sceneName)) {
+        game.inventory.wand = true;
+        game.gateStates.tower = true;
+        SCENES["Magi Tower"].wandItem.collected = true;
+      }
+      if (sceneName === "Victory") {
+        game.bossState.defeated = true;
+        game.bossState.active = false;
+        game.bossState.introPlayed = true;
+        game.bossState.hp = 0;
+      }
+    }
+
+    function skipToNextScene() {
+      const currentIndex = SCENE_ORDER.indexOf(game.scene);
+      const nextIndex = currentIndex < 0 ? 0 : Math.min(SCENE_ORDER.length - 1, currentIndex + 1);
+      const nextScene = SCENE_ORDER[nextIndex];
+      unlockProgressThroughScene(nextScene);
+      if (nextScene === "Boss Arena" && !game.bossState.defeated) {
+        game.bossState = createBossState(SCENES["Boss Arena"].boss.hp);
+        game.inventory.wand = true;
+        game.gateStates.tower = true;
+        SCENES["Magi Tower"].wandItem.collected = true;
+      }
+      enterScene(nextScene, SCENE_SPAWNS[nextScene]);
+      setPrompt(`Cheat used. Skipped to ${nextScene}.`);
+      saveGame();
+    }
+
+    function skipToPreviousScene() {
+      const currentIndex = SCENE_ORDER.indexOf(game.scene);
+      const prevIndex = currentIndex < 0 ? 0 : Math.max(0, currentIndex - 1);
+      const prevScene = SCENE_ORDER[prevIndex];
+      unlockProgressThroughScene(prevScene);
+      if (prevScene === "Boss Arena" && !game.bossState.defeated) {
+        game.bossState = createBossState(SCENES["Boss Arena"].boss.hp);
+        game.inventory.wand = true;
+        game.gateStates.tower = true;
+        SCENES["Magi Tower"].wandItem.collected = true;
+      }
+      enterScene(prevScene, SCENE_SPAWNS[prevScene]);
+      setPrompt(`Cheat used. Skipped back to ${prevScene}.`);
+      saveGame();
+    }
+
+    function updateCheatBuffer(key) {
+      if (game.scene === "Title") return;
+      if (game.quizActive) return;
+      if (game.dialogActive) return;
+      if (key !== "ArrowUp" && key !== "ArrowDown") {
+        game.cheatBuffer = [];
+        return;
+      }
+      game.cheatBuffer.push(key);
+      if (game.cheatBuffer.length > CHEAT_NEXT_LEVEL.length) {
+        game.cheatBuffer.shift();
+      }
+      if (CHEAT_NEXT_LEVEL.every((step, index) => game.cheatBuffer[index] === step)) {
+        game.cheatBuffer = [];
+        skipToNextScene();
+        return;
+      }
+      if (CHEAT_PREV_LEVEL.every((step, index) => game.cheatBuffer[index] === step)) {
+        game.cheatBuffer = [];
+        skipToPreviousScene();
+      }
+    }
+
+    function respawn() {
+      const checkpoint = game.lastCheckpoint || { scene: game.scene, x: 80, y: 420 };
+      game.scene = checkpoint.scene;
+      game.player = createPlayer({ x: checkpoint.x, y: checkpoint.y });
+    }
+
+    function getScene() {
+      return SCENES[game.scene];
+    }
+
+    function handleGate(scene, gate) {
+      if (game.gateStates[gate.id]) return;
+      if (gate.id === "lobby" && game.inventory.runes < 3) {
+        queueDialog("Rune Gate", "You need 3 runes to attempt the gate.");
+        return;
+      }
+      if (gate.id === "water" && !game.inventory.key) {
+        queueDialog("Key Gate", "You need the Golden Key to attempt the gate.");
+        return;
+      }
+      if (gate.id === "tower" && !game.inventory.wand) {
+        queueDialog("Tower Gate", "You need the Wand to attempt the gate.");
+        return;
+      }
+      const rounds = createGateQuiz(gate.id);
+      let roundIndex = 0;
+
+      const askRound = () => {
+        const round = rounds[roundIndex];
+        showQuiz(round, `${gate.label} ${roundIndex + 1}/${rounds.length}`, guess => {
+          const answer = normalizeAnswer(guess);
+          if (!answer) {
+            setQuizHint("Type the spelling before you submit.");
+            return;
+          }
+          if (answer === round.word) {
+            roundIndex += 1;
+            if (roundIndex >= rounds.length) {
+              game.gateStates[gate.id] = true;
+              closeQuiz();
+              spawnFx({ x: gate.x + gate.w / 2, y: gate.y + 30, color: "#ffe18d", count: 16, spread: 1.6, life: 0.95 });
+              queueDialog("Gate Opened", "Great work! You finished the spelling words and the gate unlocks.");
+              setPrompt("Nice spelling. Head through the gate.");
+              saveGame();
+              return;
+            }
+            askRound();
+            return;
+          }
+
+          round.attempts += 1;
+          setQuizHint(getRoundHint(round));
+          setPrompt("Try again. Replay the word if needed.");
+        });
+      };
+
+      askRound();
+    }
+
+    function createGateQuiz(id) {
+      return SPELLING_GATES[id].map(entry => {
+        return {
+          word: entry.word,
+          answerLabel: entry.answerLabel || entry.word,
+          definition: entry.definition,
+          sentence: entry.sentence,
+          displaySentence: entry.displaySentence,
+          hints: entry.hints.slice(),
+          attempts: 0
+        };
+      });
+    }
+
+    function createPromptQuiz(options) {
+      return {
+        word: normalizeAnswer(options.answer),
+        answerLabel: options.answerLabel || options.answer,
+        body: options.body,
+        meta: options.meta || "",
+        choices: options.choices ? shuffle(options.choices) : null,
+        hints: (options.hints || []).slice(),
+        attempts: 0,
+        disableAudio: !!options.disableAudio,
+        initialHint: options.initialHint || ""
+      };
+    }
+
+    function awardHeartUpgrade(message) {
+      game.maxHearts = Math.min(6, game.maxHearts + 1);
+      game.hearts = game.maxHearts;
+      spawnFx({ x: game.player.x + game.player.w / 2, y: game.player.y + 10, color: "#ff9cac", count: 18, spread: 1.8, life: 0.9 });
+      queueDialog("Heart Upgrade", message || "Your heart meter grew.");
+      saveGame();
+    }
+
+    function startSideQuest(sideQuest) {
+      const sceneKey = sideQuest.id;
+      if (game.sideQuestStates[sceneKey]) {
+        queueDialog(sideQuest.title, "You already solved this side quest.");
+        return;
+      }
+      const question = shuffle(sideQuest.questions)[0];
+      const round = createPromptQuiz({
+        answer: question.answer,
+        answerLabel: question.answer,
+        body: `<strong>Optional Reward:</strong> ${sideQuest.reward}<br>${question.body}`,
+        meta: "Bonus side quest",
+        choices: question.choices,
+        hints: question.hints,
+        disableAudio: true,
+        initialHint: "Pick the best answer to earn a health upgrade."
+      });
+      showQuiz(round, sideQuest.title, guess => {
+        const answer = normalizeAnswer(guess);
+        if (!answer) {
+          setQuizHint("Pick one of the choices to answer.");
+          return;
+        }
+        if (answer === round.word) {
+          game.sideQuestStates[sceneKey] = true;
+          closeQuiz();
+          awardHeartUpgrade(`Nice work. ${sideQuest.reward} unlocked.`);
+          setPrompt("Bonus quest complete. Your heart meter grew.");
+          return;
+        }
+        round.attempts += 1;
+        setQuizHint(getRoundHint(round));
+      });
+    }
+
+    function resetBossBattle() {
+      game.bossState = createBossState(getScene().boss.hp);
+    }
+
+    function startBossBattle() {
+      const scene = getScene();
+      if (!scene.boss) return;
+      game.bossState.fireballs = game.bossState.fireballs || [];
+      if (game.bossState.defeated) {
+        queueDialog("Boss Arena", "Stormshell Rex is already defeated. Head for the exit.");
+        return;
+      }
+      if (!game.inventory.wand) {
+        queueDialog("Boss Arena", "You need the wand before you can cast in here.");
+        return;
+      }
+      if (!game.bossState.wordQueue || game.bossState.wordQueue.length === 0) {
+        game.bossState.wordQueue = shuffle(createGateQuiz("boss"));
+      }
+      if (!game.bossState.introPlayed && game.bossState.roundIndex === 0) {
+        startBossIntroCutscene(scene);
+        return;
+      }
+      game.bossState.active = true;
+      if (game.bossState.roundIndex === 0) {
+        queueDialog("Boss Battle", "Stand in the wand circle and spell each word. Two mistakes and the boss battle resets.");
+      }
+      window.setTimeout(() => {
+        if (game.scene === "Boss Arena" && !game.quizActive && !game.dialogActive && !game.bossState.defeated) {
+          beginBossSpellingRound();
+        }
+      }, 250);
+    }
+
+    function shuffle(items) {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function enterScene(name, spawn) {
+      game.scene = name;
+      game.player = createPlayer(spawn || { x: 80, y: 420 });
+      game.camera.x = 0;
+      game.camera.y = 0;
+      game.pupShield = !!game.pet;
+      if (name === "Boss Arena" && (!game.bossState || !game.bossState.hp || game.bossState.defeated === undefined)) {
+        game.bossState = createBossState(SCENES["Boss Arena"].boss.hp);
+      }
+      if (game.pet && game.player) {
+        game.pupPos.x = game.player.x - 40;
+        game.pupPos.y = game.player.y + 20;
+      }
+      if (name === "Victory") {
+        overlays.victory.style.display = "grid";
+        spawnFx({ x: 512, y: 180, color: "#ffe18d", count: 28, spread: 2, life: 1.2 });
+        setPrompt("Adventure complete. Tap Play Again for another run.");
+      } else {
+        overlays.victory.style.display = "none";
+        setPrompt(`Entered ${name}.`);
+      }
+      updateMusic();
+      setHUD();
+    }
+    function update(dt) {
+      const scene = getScene();
+      const player = game.player;
+      updateFx(dt);
+      const graceBase = 0.1 + (game.pet ? PETS[game.pet].graceBonus : 0);
+      if (game.invuln > 0) {
+        game.invuln = Math.max(0, game.invuln - dt);
+      }
+      if (game.bossState && game.bossState.cooldown > 0) {
+        game.bossState.cooldown = Math.max(0, game.bossState.cooldown - dt);
+      }
+      if (game.bossState && game.bossState.hitFlash > 0) {
+        game.bossState.hitFlash = Math.max(0, game.bossState.hitFlash - dt);
+      }
+      if (game.bossState && game.bossState.defeated) {
+        game.bossState.fall = Math.min(220, (game.bossState.fall || 0) + 180 * dt);
+        game.bossState.vanish = Math.min(1, (game.bossState.vanish || 0) + 0.75 * dt);
+      }
+      if (game.bossState && game.bossState.cutsceneActive) {
+        updateBossCutscene(scene, dt);
+      }
+
+      player.coyote = player.onGround ? graceBase : Math.max(0, player.coyote - dt);
+      player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
+
+      const axis = game.touchAxisX !== 0 ? game.touchAxisX : (INPUT.right ? 1 : 0) + (INPUT.left ? -1 : 0);
+      if (axis < -0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
+      if (axis > 0.05) player.vx = clamp(player.vx + axis * player.speed * dt * 4, -player.speed, player.speed);
+      if (Math.abs(axis) <= 0.05) player.vx *= 0.85;
+      if (axis < -0.05) game.facing = -1;
+      if (axis > 0.05) game.facing = 1;
+
+      if (player.jumpBuffer > 0 && player.coyote > 0) {
+        player.vy = -player.jumpPower;
+        player.coyote = 0;
+        player.jumpBuffer = 0;
+        player.onGround = false;
+        spawnFx({ x: player.x + player.w / 2, y: player.y + player.h, color: "#fff3cf", count: 5, spread: 0.5, life: 0.35, vy: -40 });
+      }
+
+      player.vy += player.gravity * dt;
+      player.vy = clamp(player.vy, -1200, 1200);
+
+      player.x += player.vx * dt;
+      const solidRects = getSolidRects(scene);
+      resolveCollisions(player, solidRects, true);
+
+      player.y += player.vy * dt;
+      player.onGround = false;
+      resolveCollisions(player, solidRects, false);
+
+      player.x = clamp(player.x, 10, scene.width - player.w - 10);
+
+      scene.hazards && scene.hazards.forEach(hazard => {
+        hazard.x += hazard.vx * dt;
+        if (hazard.x < 300 || hazard.x > scene.width - 200) hazard.vx *= -1;
+        if (rectsOverlap(player, hazard)) {
+          takeDamage(hazard.x + hazard.w / 2);
+        }
+      });
+
+      if (scene.enemies) {
+        scene.enemies.forEach(enemy => {
+          if (enemy.defeated) return;
+          enemy.x += enemy.vx * dt;
+          if (enemy.x < enemy.minX || enemy.x > enemy.maxX) enemy.vx *= -1;
+          if (rectsOverlap(player, enemy)) {
+            const playerBottom = player.y + player.h;
+            const enemyTop = enemy.y + 6;
+            if (player.vy > 120 && playerBottom < enemyTop + 12) {
+              enemy.defeated = true;
+              player.vy = -player.jumpPower * 0.6;
+              spawnFx({ x: enemy.x + enemy.w / 2, y: enemy.y + enemy.h / 2, color: "#ffb6a0", count: 10, spread: 1.2, life: 0.55 });
+              quickDialog("Stomp!", "Enemy cleared.", 600);
+            } else {
+              takeDamage(enemy.x + enemy.w / 2);
+            }
+          }
+        });
+      }
+
+      if (scene.boss && !game.bossState.defeated) {
+        game.bossState.fireballs = game.bossState.fireballs || [];
+        game.bossState.nextAttack = game.bossState.nextAttack ?? 1.4;
+        if (game.bossState.active && !game.bossState.cutsceneActive && !game.quizActive && !game.dialogActive) {
+          game.bossState.nextAttack -= dt;
+          if (game.bossState.nextAttack <= 0) {
+            spawnBossVolley(scene);
+            game.bossState.nextAttack = game.bossState.cooldown > 0 ? 0.95 : 1.85;
+          }
+        }
+        game.bossState.fireballs = game.bossState.fireballs.filter(projectile => {
+          projectile.life -= dt;
+          projectile.x += projectile.vx * dt;
+          projectile.y += projectile.vy * dt;
+          projectile.vy += projectile.kind === "ember" ? 620 * dt : 180 * dt;
+          if (!projectile.hit && rectsOverlap(player, { x: projectile.x - projectile.r, y: projectile.y - projectile.r, w: projectile.r * 2, h: projectile.r * 2 })) {
+            projectile.hit = true;
+            takeDamage(projectile.x);
+            return false;
+          }
+          return projectile.life > 0 && projectile.y < scene.height + 50;
+        });
+      }
+
+      if (game.pet) {
+        const targetX = player.x - 36;
+        const targetY = player.y + 20;
+        game.pupPos.x += (targetX - game.pupPos.x) * 0.08;
+        game.pupPos.y += (targetY - game.pupPos.y) * 0.08;
+      }
+
+      scene.runes && scene.runes.forEach(rune => {
+        if (!rune.collected && rectsOverlap(player, { x: rune.x, y: rune.y, w: 24, h: 24 })) {
+          rune.collected = true;
+          game.inventory.runes += 1;
+          spawnFx({ x: rune.x + 12, y: rune.y + 12, color: "#88b8ff", count: 14, spread: 1.4, life: 0.75 });
+          setPrompt(`Rune found. ${game.inventory.runes} of 3 collected.`);
+          saveGame();
+        }
+      });
+
+      if (scene.keyItem && !scene.keyItem.collected && rectsOverlap(player, { x: scene.keyItem.x, y: scene.keyItem.y, w: 26, h: 26 })) {
+        scene.keyItem.collected = true;
+        game.inventory.key = true;
+        spawnFx({ x: scene.keyItem.x + 12, y: scene.keyItem.y + 10, color: "#ffd45c", count: 16, spread: 1.5, life: 0.8 });
+        setPrompt("Golden Key collected. Head for the gate.");
+        quickDialog("Golden Key", "You found the Golden Key.");
+        saveGame();
+      }
+
+      if (scene.wandItem && !scene.wandItem.collected && rectsOverlap(player, { x: scene.wandItem.x, y: scene.wandItem.y, w: 26, h: 26 })) {
+        scene.wandItem.collected = true;
+        game.inventory.wand = true;
+        spawnFx({ x: scene.wandItem.x + 14, y: scene.wandItem.y + 8, color: "#d59bff", count: 18, spread: 1.7, life: 0.9 });
+        setPrompt("Tower Wand collected. The final gate is ready.");
+        quickDialog("Tower Wand", "The wand hums with energy.");
+        saveGame();
+      }
+
+      if (scene.checkpoints) {
+        scene.checkpoints.forEach(check => {
+          if (rectsOverlap(player, check)) {
+            if (!check.active) {
+              check.active = true;
+              spawnFx({ x: check.x + check.w / 2, y: check.y + 10, color: "#fff2a8", count: 10, spread: 1, life: 0.65 });
+              setPrompt("Checkpoint reached. You are safe here.");
+            }
+            game.lastCheckpoint = { scene: game.scene, x: check.x, y: check.y - 20 };
+            saveGame();
+          }
+        });
+      }
+
+      if (scene.petSpot && !game.pet && rectsOverlap(player, scene.petSpot) && !scene.petSpot.prompted) {
+        scene.petSpot.prompted = true;
+        queueDialog("Pine Pup", "Press E to befriend the Pine Pup.");
+      }
+
+      scene.exits && scene.exits.forEach(exit => {
+        if (exit.requiresBoss && !game.bossState.defeated) return;
+        if (rectsOverlap(player, exit)) {
+          enterScene(exit.target, exit.spawn);
+        }
+      });
+
+      updateContextPrompt(scene, player);
+
+      const camTargetX = clamp(player.x - canvas.width / 2 + player.w / 2, 0, scene.width - canvas.width);
+      game.camera.x += (camTargetX - game.camera.x) * 0.08;
+    }
+
+    function updateContextPrompt(scene, player) {
+      const interact = getInteractRect(player);
+      let prompt = "";
+      if (scene.petSpot && !game.pet && rectsOverlap(interact, scene.petSpot)) {
+        prompt = "Press E to befriend Pine Pup.";
+      } else if (scene.sideQuest && !game.sideQuestStates[scene.sideQuest.id] && rectsOverlap(interact, scene.sideQuest.prompt)) {
+        prompt = "Press E for the optional STEM side quest.";
+      } else if (scene.boss && !game.bossState.defeated && rectsOverlap(interact, scene.boss.altar)) {
+        prompt = "Press E to start the boss spelling battle.";
+      } else if (scene.gates && scene.gates.some(gate => rectsOverlap(interact, gate) && !game.gateStates[gate.id])) {
+        prompt = "Press E to try the gate challenge.";
+      } else if (scene.dialogs && scene.dialogs.some(dialog => rectsOverlap(interact, dialog))) {
+        prompt = "Press E to talk.";
+      } else if (game.scene === "Lodge Lobby") {
+        prompt = "Find the glowing runes and head right.";
+      } else if (game.scene === "Water Park") {
+        prompt = game.inventory.key ? "Gate is open on the far right." : "Bounce across the park and grab the key.";
+      } else if (game.scene === "Forest Trail") {
+        prompt = "Touch the fluttering banners to save progress.";
+      } else if (game.scene === "Inventor Workshop") {
+        prompt = game.gateStates.workshop ? "Workshop gate is open. Head for the tower." : "Climb the machines and open the workshop gate.";
+      } else if (game.scene === "Magi Tower") {
+        prompt = game.inventory.wand ? "Take the final spelling test at the tower gate." : "Climb higher to reach the wand.";
+      } else if (game.scene === "Boss Arena") {
+        prompt = game.bossState.defeated ? "Boss defeated. Walk to the exit." : "Stand in the wand circle to cast spelling spells.";
+      }
+      setPrompt(prompt);
+    }
+
+    function resolveCollisions(player, solids, horizontal) {
+      solids.forEach(rect => {
+        if (rectsOverlap(player, rect)) {
+          if (horizontal) {
+            if (player.vx > 0) player.x = rect.x - player.w;
+            if (player.vx < 0) player.x = rect.x + rect.w;
+            player.vx = 0;
+          } else {
+            if (player.vy > 0) {
+              player.y = rect.y - player.h;
+              player.vy = 0;
+              player.onGround = true;
+            }
+            if (player.vy < 0) {
+              player.y = rect.y + rect.h;
+              player.vy = 0;
+            }
+          }
+        }
+      });
+    }
+
+    function getSolidRects(scene) {
+      const solids = scene.platforms.slice();
+      if (scene.gates) {
+        scene.gates.forEach(gate => {
+          if (!game.gateStates[gate.id]) solids.push(gate);
+        });
+      }
+      if (scene.exits) {
+        scene.exits.forEach(exit => {
+          if (exit.requiresBoss && !game.bossState.defeated) solids.push(exit);
+        });
+      }
+      return solids;
+    }
+
+    function takeDamage(sourceX) {
+      if (game.hearts <= 0) return;
+      if (game.invuln > 0) return;
+
+      if (game.pet && game.pupShield) {
+        game.pupShield = false;
+        game.invuln = 0.9;
+        spawnFx({ x: game.pupPos.x + 16, y: game.pupPos.y + 16, color: "#fff0aa", count: 12, spread: 1.5, life: 0.7 });
+        setPrompt("Pine Pup protected you from that hit.");
+        return;
+      }
+
+      game.hearts -= 1;
+      setHUD();
+      game.invuln = game.pet ? 1.1 : 0.7;
+      spawnFx({ x: game.player.x + game.player.w / 2, y: game.player.y + game.player.h / 2, color: "#ff8f8f", count: 12, spread: 1.2, life: 0.65 });
+      setPrompt(`Ouch. ${game.hearts} hearts left.`);
+
+      if (game.player) {
+        const dir = (sourceX !== undefined && game.player.x < sourceX) ? -1 : 1;
+        game.player.vx = dir * 260;
+        game.player.vy = -320;
+      }
+
+      if (game.hearts <= 0) {
+        queueDialog("Try Again", "Magi Alastair takes a breather. Restarting from last checkpoint.");
+        game.hearts = game.maxHearts;
+        respawn();
+      }
+    }
+
+    function render() {
+      const scene = getScene();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cam = game.camera;
+      drawBackdrop(scene, cam);
+      drawGroundDecor(scene, cam);
+
+      (scene.platforms || []).forEach(platform => drawPlatform(platform, cam));
+
+      scene.gates && scene.gates.forEach(gate => {
+        if (game.gateStates[gate.id]) {
+          drawGate(gate, cam, true);
+        } else {
+          drawGate(gate, cam, false);
+        }
+      });
+      if (scene.sideQuest) {
+        drawSideQuest(scene.sideQuest, cam, game.sideQuestStates[scene.sideQuest.id]);
+      }
+
+      scene.runes && scene.runes.forEach(rune => {
+        if (!rune.collected) drawRune(rune, cam);
+      });
+
+      if (scene.keyItem && !scene.keyItem.collected) drawKey(scene.keyItem, cam);
+      if (scene.wandItem && !scene.wandItem.collected) drawWand(scene.wandItem, cam);
+
+      scene.checkpoints && scene.checkpoints.forEach(check => drawCheckpoint(check, cam));
+      if (scene.petSpot && !game.pet) drawPet(scene.petSpot, cam);
+
+      scene.hazards && scene.hazards.forEach(hazard => drawHazard(hazard, cam));
+      scene.enemies && scene.enemies.forEach(enemy => {
+        if (!enemy.defeated) drawEnemy(enemy, cam);
+      });
+      if (scene.boss) {
+        drawBoss(scene.boss, cam);
+        drawBossCutscene(cam);
+        drawBossProjectiles(cam);
+      }
+      if (game.pet) {
+        drawPup(game.pupPos, cam, game.pupShield);
+      }
+      drawFx(cam);
+
+      if (game.player) {
+        drawPlayer(game.player, cam);
+      }
+    }
+
+    function drawBackdrop(scene, cam) {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      const top = scene.background ? scene.background.top : "#2a1f3d";
+      const bottom = scene.background ? scene.background.bottom : "#7b4d3b";
+      bg.addColorStop(0, top);
+      bg.addColorStop(1, bottom);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const theme = scene.name === "Magi Tower"
+        ? "desert"
+        : scene.name === "Boss Arena"
+          ? "desert"
+          : scene.name === "Inventor Workshop"
+            ? "mushrooms"
+        : scene.name === "Water Park"
+          ? "hills"
+          : scene.name === "Forest Trail"
+            ? "trees"
+            : scene.name === "Lodge Lobby"
+              ? "trees"
+              : "mushrooms";
+
+      drawParallaxLayer(ART.backgrounds.clouds, cam.x * 0.08, 44, 1.08);
+      drawParallaxLayer(ART.backgrounds[theme], cam.x * 0.18, 108, 1.02);
+
+      drawSunsetGlow();
+      drawFarMountains(cam);
+      drawMidHills(cam);
+      drawClouds(cam);
+      drawSparkles(scene, cam);
+
+      if (scene.name === "Forest Trail") {
+        drawForestSilhouette(cam);
+        drawForestLanterns(cam);
+      }
+      if (scene.name === "Water Park") {
+        drawWaterShimmer(cam);
+        drawWaterSlides(cam);
+      }
+      if (scene.name === "Magi Tower") {
+        drawTowerAura(cam);
+        drawTowerSpire(cam);
+      }
+      if (scene.name === "Boss Arena") {
+        drawBossSky(cam);
+      }
+      if (scene.name === "Inventor Workshop") {
+        drawWorkshopMachines(cam);
+      }
+      if (scene.name === "Lodge Lobby") {
+        drawLodgeBanner(cam);
+        drawLodgeFacade(cam);
+      }
+    }
+
+    function drawParallaxLayer(img, offsetX, y, scale) {
+      if (!img) return;
+      const drawH = img.height * (scale || 1);
+      const drawW = img.width * (scale || 1);
+      const start = -((offsetX % drawW) + drawW);
+      for (let x = start; x < canvas.width + drawW; x += drawW) {
+        ctx.drawImage(img, x, y, drawW, drawH);
+      }
+    }
+
+    function drawSunsetGlow() {
+      ctx.save();
+      const glow = ctx.createRadialGradient(180, 120, 30, 180, 120, 260);
+      glow.addColorStop(0, "rgba(255, 210, 140, 0.7)");
+      glow.addColorStop(1, "rgba(255, 170, 120, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    function drawFarMountains(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.2, 0);
+      ctx.fillStyle = "rgba(58, 52, 92, 0.6)";
+      ctx.beginPath();
+      ctx.moveTo(-100, 420);
+      ctx.lineTo(120, 280);
+      ctx.lineTo(320, 420);
+      ctx.lineTo(520, 300);
+      ctx.lineTo(740, 430);
+      ctx.lineTo(980, 290);
+      ctx.lineTo(1200, 430);
+      ctx.lineTo(1400, 320);
+      ctx.lineTo(1700, 430);
+      ctx.lineTo(1900, 360);
+      ctx.lineTo(2100, 460);
+      ctx.lineTo(2100, 620);
+      ctx.lineTo(-100, 620);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMidHills(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.35, 0);
+      ctx.fillStyle = "rgba(70, 88, 96, 0.55)";
+      ctx.beginPath();
+      ctx.moveTo(-120, 500);
+      ctx.quadraticCurveTo(200, 420, 420, 500);
+      ctx.quadraticCurveTo(700, 400, 980, 500);
+      ctx.quadraticCurveTo(1300, 430, 1600, 500);
+      ctx.lineTo(2000, 620);
+      ctx.lineTo(-120, 620);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawClouds(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.15, 0);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      for (let i = 0; i < 5; i += 1) {
+        const baseX = 80 + i * 220;
+        const baseY = 90 + i * 12;
+        ctx.beginPath();
+        ctx.ellipse(baseX, baseY, 55, 20, 0, 0, Math.PI * 2);
+        ctx.ellipse(baseX + 40, baseY + 6, 45, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(baseX - 40, baseY + 8, 40, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawSparkles(scene, cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.18, 0);
+      const time = Date.now() / 700;
+      const color = scene.name === "Magi Tower" ? "rgba(255, 233, 170, 0.55)" : "rgba(255, 255, 255, 0.35)";
+      ctx.fillStyle = color;
+      for (let i = 0; i < 12; i += 1) {
+        const x = 70 + i * 110;
+        const y = 100 + Math.sin(time + i) * 14 + (i % 3) * 18;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.8 + (i % 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawForestSilhouette(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.4, 0);
+      ctx.fillStyle = "rgba(24, 52, 40, 0.55)";
+      for (let i = 0; i < 12; i += 1) {
+        const x = i * 140;
+        ctx.beginPath();
+        ctx.moveTo(x + 10, 520);
+        ctx.lineTo(x + 50, 420);
+        ctx.lineTo(x + 90, 520);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawForestLanterns(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.55, 0);
+      const time = Date.now() / 380;
+      for (let i = 0; i < 8; i += 1) {
+        const x = 120 + i * 180;
+        const y = 180 + (i % 2) * 28 + Math.sin(time + i) * 8;
+        ctx.fillStyle = "rgba(255, 235, 146, 0.7)";
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 235, 146, 0.14)";
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawWaterShimmer(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.45, 0);
+      ctx.strokeStyle = "rgba(180, 220, 255, 0.4)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(i * 160, 500 + (i % 2) * 6);
+        ctx.lineTo(i * 160 + 90, 500 + (i % 2) * 6);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawWaterSlides(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.4, 0);
+      ctx.lineWidth = 18;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255, 140, 120, 0.32)";
+      ctx.beginPath();
+      ctx.moveTo(1080, 180);
+      ctx.bezierCurveTo(1160, 130, 1280, 190, 1360, 280);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255, 228, 140, 0.28)";
+      ctx.beginPath();
+      ctx.moveTo(1160, 160);
+      ctx.bezierCurveTo(1230, 120, 1360, 180, 1450, 280);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTowerAura(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.3, 0);
+      const glow = ctx.createRadialGradient(900, 260, 20, 900, 260, 180);
+      glow.addColorStop(0, "rgba(210, 170, 255, 0.45)");
+      glow.addColorStop(1, "rgba(210, 170, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(700, 120, 400, 320);
+      ctx.restore();
+    }
+
+    function drawTowerSpire(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.5, 0);
+      ctx.fillStyle = "rgba(52, 43, 89, 0.38)";
+      ctx.fillRect(1110, 160, 120, 250);
+      ctx.beginPath();
+      ctx.moveTo(1080, 160);
+      ctx.lineTo(1170, 70);
+      ctx.lineTo(1260, 160);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(255, 229, 168, 0.7)";
+      ctx.fillRect(1158, 220, 24, 42);
+      ctx.restore();
+    }
+
+    function drawLodgeBanner(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.25, 0);
+      ctx.fillStyle = "rgba(180, 90, 60, 0.5)";
+      ctx.fillRect(260, 200, 220, 50);
+      ctx.fillStyle = "rgba(250, 220, 160, 0.7)";
+      ctx.font = "16px Trebuchet MS";
+      ctx.fillText("Lodge of Runes", 280, 232);
+      ctx.restore();
+    }
+
+    function drawLodgeFacade(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.42, 0);
+      ctx.fillStyle = "rgba(86, 60, 40, 0.32)";
+      ctx.fillRect(80, 250, 240, 160);
+      ctx.fillStyle = "rgba(255, 220, 145, 0.24)";
+      for (let i = 0; i < 3; i += 1) {
+        ctx.fillRect(110 + i * 66, 284, 34, 50);
+      }
+      ctx.restore();
+    }
+
+    function drawGroundDecor(scene, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const groundY = scene.height - 76;
+      const torch = (Math.floor(Date.now() / 180) % 2 === 0) ? ART.props.torchA : ART.props.torchB;
+      if (scene.name === "Lodge Lobby") {
+        for (let i = 0; i < 6; i += 1) {
+          const x = 150 + i * 250;
+          drawImageFit(ART.props.signRight, x, groundY - 46, 34, 34);
+          drawImageFit(torch, x + 44, groundY - 58, 20, 32);
+          drawImageFit(ART.props.rock, x + 76, groundY - 14, 28, 18);
+        }
+      } else if (scene.name === "Forest Trail") {
+        for (let i = 0; i < 10; i += 1) {
+          const x = 90 + i * 160;
+          drawImageFit(ART.props.bush, x, groundY - 30, 40, 28);
+          drawImageFit(ART.props.mushroom, x + 34, groundY - 18, 18, 18);
+          if (i % 2 === 0) {
+            drawImageFit(ART.props.rock, x + 64, groundY - 12, 24, 16);
+          }
+        }
+      } else if (scene.name === "Water Park") {
+        for (let i = 0; i < 7; i += 1) {
+          const x = 130 + i * 220;
+          drawImageFit(ART.props.rock, x, groundY - 12, 28, 18);
+          drawImageFit(ART.props.signRight, x + 34, groundY - 40, 28, 28);
+          drawImageFit(ART.props.bush, x + 70, groundY - 28, 34, 24);
+        }
+      } else if (scene.name === "Magi Tower") {
+        for (let i = 0; i < 8; i += 1) {
+          const x = 140 + i * 180;
+          drawImageFit(torch, x, groundY - 58, 20, 32);
+          drawImageFit(ART.props.stone, x + 24, groundY - 24, 36, 24);
+          if (i % 2 === 0) {
+            drawImageFit(ART.props.checkpointA, x + 64, groundY - 46, 26, 34);
+          }
+        }
+      } else if (scene.name === "Inventor Workshop") {
+        for (let i = 0; i < 8; i += 1) {
+          const x = 120 + i * 210;
+          drawImageFit(ART.props.stone, x, groundY - 24, 40, 24);
+          drawImageFit(ART.props.signRight, x + 46, groundY - 42, 28, 28);
+          drawImageFit(ART.props.rock, x + 82, groundY - 12, 24, 18);
+        }
+      } else if (scene.name === "Boss Arena") {
+        for (let i = 0; i < 7; i += 1) {
+          const x = 140 + i * 180;
+          drawImageFit(torch, x, groundY - 58, 20, 32);
+          drawImageFit(ART.props.rock, x + 26, groundY - 12, 26, 18);
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawWorkshopMachines(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.45, 0);
+      ctx.strokeStyle = "rgba(120, 70, 38, 0.45)";
+      ctx.lineWidth = 18;
+      for (let i = 0; i < 4; i += 1) {
+        const x = 260 + i * 330;
+        ctx.beginPath();
+        ctx.moveTo(x, 440);
+        ctx.lineTo(x + 90, 260 - (i % 2) * 30);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x + 110, 300 - (i % 2) * 26, 34, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawBossSky(cam) {
+      ctx.save();
+      ctx.translate(-cam.x * 0.3, 0);
+      ctx.strokeStyle = "rgba(174, 223, 255, 0.55)";
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 5; i += 1) {
+        const x = 180 + i * 230;
+        ctx.beginPath();
+        ctx.moveTo(x, 70);
+        ctx.lineTo(x + 24, 110);
+        ctx.lineTo(x - 8, 118);
+        ctx.lineTo(x + 30, 168);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPlatform(platform, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      if (platform.type === "ground") {
+        ctx.fillStyle = "#6ca061";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        tileImageX(ART.props.grass, platform.x, platform.y - 10, platform.w, 24, 32, 24);
+        tileImageX(ART.props.rock, platform.x, platform.y + 18, platform.w, Math.max(platform.h - 18, 20), 32, 32);
+      } else if (platform.type === "wood") {
+        ctx.fillStyle = "#8f5f38";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        tileImageX(ART.props.plank, platform.x, platform.y, platform.w, platform.h, 32, 32);
+      } else {
+        ctx.fillStyle = "#8995aa";
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        tileImageX(ART.props.stone, platform.x, platform.y, platform.w, platform.h, 32, 32);
+      }
+      ctx.restore();
+    }
+
+    function drawGate(gate, cam, open) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const body = open ? ART.props.gateOpen : ART.props.gateClosed;
+      const top = open ? ART.props.gateOpenTop : ART.props.gateClosedTop;
+      drawImageFit(body, gate.x, gate.y + 28, gate.w, gate.h - 28);
+      drawImageFit(top, gate.x, gate.y, gate.w, 34);
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px Trebuchet MS";
+      ctx.fillText(gate.label, gate.x - 10, gate.y - 8);
+      ctx.restore();
+    }
+
+    function drawRune(rune, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 180 + rune.x * 0.02) * 4;
+      const glow = ctx.createRadialGradient(rune.x + 14, rune.y + 14 + bob, 4, rune.x + 14, rune.y + 14 + bob, 20);
+      glow.addColorStop(0, "rgba(210, 230, 255, 0.9)");
+      glow.addColorStop(1, "rgba(122, 168, 255, 0.2)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(rune.x + 14, rune.y + 14 + bob, 14, 0, Math.PI * 2);
+      ctx.fill();
+      drawImageFit(ART.pickups.rune, rune.x, rune.y + bob, 28, 28);
+      ctx.restore();
+    }
+
+    function drawKey(key, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 210 + key.x * 0.02) * 4;
+      drawImageFit(ART.pickups.key, key.x - 2, key.y - 2 + bob, 30, 30);
+      ctx.restore();
+    }
+
+    function drawWand(wand, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 200 + wand.x * 0.018) * 5;
+      drawImageFit(ART.pickups.wand, wand.x - 4, wand.y - 6 + bob, 34, 34);
+      ctx.restore();
+    }
+
+    function drawCheckpoint(check, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const flag = (Math.floor(Date.now() / 220) % 2 === 0) ? ART.props.checkpointA : ART.props.checkpointB;
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.fillRect(check.x + 18, check.y + 6, 6, check.h - 6);
+      drawImageFit(flag, check.x + 10, check.y + 4, 28, 28);
+      ctx.restore();
+    }
+
+    function drawPet(spot, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 220 + spot.x * 0.03) * 2;
+      ctx.fillStyle = "#59c29a";
+      ctx.beginPath();
+      ctx.arc(spot.x + 30, spot.y + 30 + bob, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(spot.x + 18, spot.y + 20 + bob);
+      ctx.lineTo(spot.x + 25, spot.y + 8 + bob);
+      ctx.lineTo(spot.x + 31, spot.y + 20 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(spot.x + 29, spot.y + 20 + bob);
+      ctx.lineTo(spot.x + 36, spot.y + 8 + bob);
+      ctx.lineTo(spot.x + 42, spot.y + 20 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#1a3b2f";
+      ctx.fillRect(spot.x + 20, spot.y + 26 + bob, 6, 6);
+      ctx.fillRect(spot.x + 34, spot.y + 26 + bob, 6, 6);
+      ctx.fillStyle = "#f8f1d0";
+      ctx.fillRect(spot.x + 26, spot.y + 38 + bob, 8, 4);
+      ctx.strokeStyle = "rgba(255, 240, 180, 0.4)";
+      ctx.beginPath();
+      ctx.arc(spot.x + 30, spot.y + 30 + bob, 24, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawHazard(hazard, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const spin = ART.props.spikes;
+      drawImageFit(spin, hazard.x, hazard.y - 6, hazard.w, hazard.w);
+      ctx.restore();
+    }
+
+    function drawEnemy(enemy, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const isWater = game.scene === "Water Park";
+      const isForest = game.scene === "Forest Trail";
+      const frame = Math.floor(Date.now() / 180) % 2 === 0
+        ? (isWater ? ART.enemies.waterA : isForest ? ART.enemies.forestA : ART.enemies.towerA)
+        : (isWater ? ART.enemies.waterB : isForest ? ART.enemies.forestB : ART.enemies.towerB);
+      drawImageFit(frame, enemy.x - 2, enemy.y - 2, enemy.w + 4, enemy.h + 4);
+      ctx.restore();
+    }
+
+    function drawSideQuest(sideQuest, cam, completed) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 220 + sideQuest.prompt.x * 0.02) * 3;
+      ctx.fillStyle = completed ? "rgba(120, 255, 180, 0.28)" : "rgba(255, 226, 132, 0.22)";
+      ctx.fillRect(sideQuest.prompt.x, sideQuest.prompt.y, sideQuest.prompt.w, sideQuest.prompt.h);
+      ctx.strokeStyle = completed ? "#75f2a8" : "#ffd879";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(sideQuest.prompt.x, sideQuest.prompt.y, sideQuest.prompt.w, sideQuest.prompt.h);
+      ctx.fillStyle = completed ? "#e7fff0" : "#fff4d2";
+      ctx.font = "bold 14px Trebuchet MS";
+      ctx.fillText(completed ? "DONE" : "STEM", sideQuest.prompt.x + 10, sideQuest.prompt.y + 34 + bob);
+      ctx.fillText("BONUS", sideQuest.prompt.x + 6, sideQuest.prompt.y + 52 + bob);
+      ctx.restore();
+    }
+
+    function drawBoss(boss, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const time = Date.now() / 220;
+      const bodyX = boss.body.x;
+      const fallOffset = game.bossState.fall || 0;
+      const vanish = game.bossState.vanish || 0;
+      if (game.bossState.defeated && vanish >= 1) {
+        ctx.restore();
+        return;
+      }
+      const bodyY = boss.body.y + Math.sin(time) * 3 + fallOffset;
+      const alive = !game.bossState.defeated;
+      const lunge = alive && game.bossState.active ? Math.sin(time * 0.8) * 10 : 0;
+      const hitFlash = game.bossState.hitFlash > 0 ? Math.sin(Date.now() / 50) > 0 ? "#f3e59f" : "#8bb74f" : null;
+      ctx.globalAlpha = 1 - vanish;
+      if (!alive) {
+        ctx.translate(bodyX + 120, bodyY + 120);
+        ctx.rotate(Math.min(1.1, vanish * 1.2));
+        ctx.translate(-(bodyX + 120), -(bodyY + 120));
+      }
+      ctx.fillStyle = hitFlash || (alive ? "#5d7d34" : "#6d5a4e");
+      ctx.beginPath();
+      ctx.roundRect(bodyX + 18 - lunge, bodyY + 38, 160, 118, 36);
+      ctx.fill();
+      ctx.fillStyle = "#d9c16a";
+      ctx.beginPath();
+      ctx.roundRect(bodyX + 48 - lunge, bodyY + 64, 98, 82, 28);
+      ctx.fill();
+      ctx.fillStyle = "#cf5a35";
+      for (let i = 0; i < 5; i += 1) {
+        const spikeX = bodyX + 36 - lunge + i * 28;
+        ctx.beginPath();
+        ctx.moveTo(spikeX, bodyY + 48);
+        ctx.lineTo(spikeX + 14, bodyY + 10);
+        ctx.lineTo(spikeX + 28, bodyY + 48);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = "#7a4020";
+      ctx.beginPath();
+      ctx.ellipse(bodyX + 165 + lunge, bodyY + 100, 46, 52, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#f5ebd2";
+      ctx.fillRect(bodyX + 182 + lunge, bodyY + 86, 12, 12);
+      ctx.fillRect(bodyX + 206 + lunge, bodyY + 86, 12, 12);
+      ctx.fillStyle = "#2b1a12";
+      ctx.fillRect(bodyX + 186 + lunge, bodyY + 90, 6, 6);
+      ctx.fillRect(bodyX + 210 + lunge, bodyY + 90, 6, 6);
+      const jawDrop = alive && game.bossState.active ? 10 + Math.sin(time * 2.2) * 5 : 0;
+      ctx.fillStyle = "#31170e";
+      ctx.beginPath();
+      ctx.roundRect(bodyX + 182 + lunge, bodyY + 114 + jawDrop, 42, 20, 10);
+      ctx.fill();
+      ctx.fillStyle = "#f0892f";
+      ctx.beginPath();
+      ctx.moveTo(bodyX + 124 - lunge, bodyY + 174);
+      ctx.lineTo(bodyX + 146 - lunge, bodyY + 214 + Math.sin(time * 1.4) * 8);
+      ctx.lineTo(bodyX + 168 - lunge, bodyY + 174);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#76dbff";
+      ctx.beginPath();
+      ctx.moveTo(bodyX + 156 - lunge, bodyY + 170);
+      ctx.lineTo(bodyX + 170 - lunge, bodyY + 212 + Math.cos(time * 1.6) * 9);
+      ctx.lineTo(bodyX + 182 - lunge, bodyY + 170);
+      ctx.closePath();
+      ctx.fill();
+      const altarPulse = 0.65 + Math.sin(Date.now() / 160) * 0.25;
+      ctx.fillStyle = `rgba(192, 123, 255, ${Math.max(0.15, altarPulse * 0.35)})`;
+      ctx.beginPath();
+      ctx.ellipse(boss.altar.x + boss.altar.w / 2, boss.altar.y + boss.altar.h / 2, 46, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#fff0a8";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(boss.altar.x, boss.altar.y, boss.altar.w, boss.altar.h);
+      ctx.font = "bold 16px Trebuchet MS";
+      ctx.fillStyle = "#fff3cc";
+      ctx.fillText("WAND", boss.altar.x + 14, boss.altar.y + 30);
+      ctx.fillText("CAST", boss.altar.x + 18, boss.altar.y + 52);
+      ctx.fillStyle = "#ffd1d1";
+      ctx.fillText(`Boss HP ${game.bossState.hp}/${game.bossState.maxHp}`, bodyX + 54, bodyY - 12);
+      if (game.bossState.cutsceneActive) {
+        ctx.fillStyle = "#fff1b8";
+        ctx.fillText("Stormshell Rex is trying to eat the words.", bodyX - 90, bodyY - 40);
+      } else if (!alive && vanish < 1) {
+        ctx.fillStyle = "#ffe8c2";
+        ctx.fillText("Stormshell Rex crashes away.", bodyX - 20, bodyY - 34);
+      }
+      ctx.restore();
+    }
+
+    function createBossState(hp) {
+      return {
+        active: false,
+        defeated: false,
+        roundIndex: 0,
+        hp,
+        maxHp: hp,
+        mistakes: 0,
+        cooldown: 0,
+        nextAttack: 1.4,
+        fireballs: [],
+        hitFlash: 0,
+        introPlayed: false,
+        cutsceneActive: false,
+        cutsceneWords: [],
+        cutsceneTimer: 0,
+        cutsceneStep: 0,
+        wordQueue: [],
+        fall: 0,
+        vanish: 0
+      };
+    }
+
+    function startBossIntroCutscene(scene) {
+      const mouthX = scene.boss.body.x + 198;
+      const mouthY = scene.boss.body.y + 128;
+      const words = ["blonde", "soccer", "inventor", "music"].map((text, index) => ({
+        text,
+        x: 720 - index * 70,
+        y: 150 + index * 46,
+        targetX: mouthX,
+        targetY: mouthY,
+        eaten: false,
+        visible: true
+      }));
+      game.bossState.cutsceneActive = true;
+      game.bossState.cutsceneWords = words;
+      game.bossState.cutsceneTimer = 0;
+      game.bossState.cutsceneStep = 0;
+      game.bossState.active = false;
+      game.bossState.fireballs = [];
+      queueDialog("Boss Intro", "Stormshell Rex snaps at the spelling words. Use the wand before he gobbles them all.");
+    }
+
+    function updateBossCutscene(scene, dt) {
+      if (!scene.boss || !game.bossState.cutsceneActive) return;
+      const words = game.bossState.cutsceneWords || [];
+      const mouthX = scene.boss.body.x + 198;
+      const mouthY = scene.boss.body.y + 128;
+      game.bossState.cutsceneTimer += dt;
+      words.forEach((word, index) => {
+        if (!word.visible) return;
+        const speed = index <= game.bossState.cutsceneStep ? 0.14 : 0.045;
+        word.x += (word.targetX - word.x) * speed;
+        word.y += (word.targetY - word.y) * speed;
+      });
+      if (game.bossState.cutsceneTimer >= 0.85 && game.bossState.cutsceneStep < words.length) {
+        game.bossState.cutsceneTimer = 0;
+        const word = words[game.bossState.cutsceneStep];
+        if (word) {
+          word.x = mouthX;
+          word.y = mouthY;
+          word.visible = false;
+          spawnFx({ x: mouthX, y: mouthY, color: "#fff4ba", count: 12, spread: 1.1, life: 0.55 });
+        }
+        game.bossState.cutsceneStep += 1;
+      }
+      if (game.bossState.cutsceneStep >= words.length) {
+        game.bossState.cutsceneActive = false;
+        game.bossState.introPlayed = true;
+        game.bossState.active = true;
+        game.bossState.nextAttack = 1.1;
+        window.setTimeout(() => {
+          if (game.scene === "Boss Arena" && !game.quizActive && !game.dialogActive && !game.bossState.defeated) {
+            beginBossSpellingRound();
+          }
+        }, 250);
+      }
+    }
+
+    function drawBossCutscene(cam) {
+      if (!game.bossState.cutsceneActive || !game.bossState.cutsceneWords) return;
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      ctx.font = "bold 24px Trebuchet MS";
+      game.bossState.cutsceneWords.forEach(word => {
+        if (!word.visible) return;
+        ctx.fillStyle = "rgba(255, 248, 200, 0.92)";
+        ctx.strokeStyle = "rgba(71, 38, 20, 0.9)";
+        ctx.lineWidth = 4;
+        ctx.strokeText(word.text, word.x, word.y);
+        ctx.fillText(word.text, word.x, word.y);
+      });
+      ctx.restore();
+    }
+
+    function spawnBossVolley(scene) {
+      const boss = scene.boss;
+      const launchX = boss.body.x + 150;
+      const launchY = boss.body.y + 188;
+      const targetX = game.player ? game.player.x + game.player.w / 2 : 200;
+      const direction = targetX >= launchX ? 1 : -1;
+      for (let i = 0; i < 3; i += 1) {
+        game.bossState.fireballs.push({
+          kind: i === 1 ? "spark" : "ember",
+          x: launchX + i * 10,
+          y: launchY,
+          vx: direction * (110 + i * 28),
+          vy: -260 - i * 40,
+          r: i === 1 ? 10 : 12,
+          life: 2.3,
+          hit: false
+        });
+      }
+      spawnFx({ x: launchX, y: launchY, color: "#ffb06a", count: 10, spread: 1.2, life: 0.5 });
+      spawnFx({ x: launchX + 12, y: launchY - 6, color: "#8ad8ff", count: 8, spread: 1.1, life: 0.45 });
+    }
+
+    function drawBossProjectiles(cam) {
+      if (!game.bossState.fireballs || game.bossState.fireballs.length === 0) return;
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      game.bossState.fireballs.forEach(projectile => {
+        if (projectile.kind === "spark") {
+          ctx.strokeStyle = "rgba(138, 216, 255, 0.9)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(projectile.x - 10, projectile.y - 8);
+          ctx.lineTo(projectile.x + 4, projectile.y);
+          ctx.lineTo(projectile.x - 2, projectile.y + 7);
+          ctx.lineTo(projectile.x + 12, projectile.y + 16);
+          ctx.stroke();
+        } else {
+          const glow = ctx.createRadialGradient(projectile.x, projectile.y, 2, projectile.x, projectile.y, projectile.r + 12);
+          glow.addColorStop(0, "rgba(255, 240, 180, 0.95)");
+          glow.addColorStop(0.55, "rgba(255, 139, 66, 0.85)");
+          glow.addColorStop(1, "rgba(255, 90, 24, 0)");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(projectile.x, projectile.y, projectile.r + 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ff8b42";
+          ctx.beginPath();
+          ctx.arc(projectile.x, projectile.y, projectile.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+      ctx.restore();
+    }
+
+    function drawPup(pup, cam, shielding) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bob = Math.sin(Date.now() / 180) * 1.5;
+      ctx.fillStyle = "#4aa982";
+      ctx.beginPath();
+      ctx.arc(pup.x + 16, pup.y + 16 + bob, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(pup.x + 6, pup.y + 10 + bob);
+      ctx.lineTo(pup.x + 12, pup.y - 2 + bob);
+      ctx.lineTo(pup.x + 16, pup.y + 10 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(pup.x + 16, pup.y + 10 + bob);
+      ctx.lineTo(pup.x + 22, pup.y - 2 + bob);
+      ctx.lineTo(pup.x + 26, pup.y + 10 + bob);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#1a3b2f";
+      ctx.fillRect(pup.x + 10, pup.y + 14 + bob, 4, 4);
+      ctx.fillRect(pup.x + 20, pup.y + 14 + bob, 4, 4);
+      ctx.fillStyle = "#f8f1d0";
+      ctx.fillRect(pup.x + 13, pup.y + 22 + bob, 6, 3);
+      ctx.fillRect(pup.x + 26, pup.y + 20 + bob, 8, 3);
+      if (shielding) {
+        const pulse = 0.6 + Math.sin(Date.now() / 180) * 0.2;
+        ctx.strokeStyle = `rgba(255, 230, 160, ${pulse})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pup.x + 16, pup.y + 16 + bob, 24, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPlayer(player, cam) {
+      ctx.save();
+      ctx.translate(-cam.x, -cam.y);
+      const bounce = player.onGround ? Math.sin(Date.now() / 110) * Math.min(2, Math.abs(player.vx) * 0.01) : 0;
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2 + bounce);
+      ctx.scale(game.facing, 1);
+      ctx.translate(-(player.x + player.w / 2), -(player.y + player.h / 2));
+      const moving = Math.abs(player.vx) > 24;
+      const frame = !player.onGround
+        ? ART.player.jump
+        : moving
+          ? (Math.floor(Date.now() / 120) % 2 === 0 ? ART.player.walkA : ART.player.walkB)
+          : ART.player.idle;
+      drawImageFit(frame, player.x - 8, player.y - 10, 52, 64);
+      ctx.restore();
+    }
+
+    function getInteractRect(player) {
+      return {
+        x: player.x - 8,
+        y: player.y - 8,
+        w: player.w + 16,
+        h: player.h + 16
+      };
+    }
+
+    function handleInteraction() {
+      const scene = getScene();
+      const player = game.player;
+      const interact = getInteractRect(player);
+
+      if (scene.petSpot && !game.pet && rectsOverlap(interact, scene.petSpot)) {
+        game.pet = "pinePup";
+        scene.petSpot.prompted = true;
+        game.pupShield = true;
+        game.hearts = Math.min(game.maxHearts, game.hearts + 1);
+        if (game.player) {
+          game.pupPos.x = game.player.x - 40;
+          game.pupPos.y = game.player.y + 20;
+        }
+        queueDialog("Pine Pup", "The Pine Pup joins you, giving extra jump grace.");
+        saveGame();
+        return;
+      }
+
+      if (scene.sideQuest && rectsOverlap(interact, scene.sideQuest.prompt)) {
+        startSideQuest(scene.sideQuest);
+        return;
+      }
+
+      if (scene.boss && rectsOverlap(interact, scene.boss.altar)) {
+        startBossBattle();
+        return;
+      }
+
+      if (scene.gates) {
+        scene.gates.forEach(gate => {
+          if (rectsOverlap(interact, gate)) handleGate(scene, gate);
+        });
+      }
+
+      if (scene.dialogs) {
+        scene.dialogs.forEach(dialog => {
+          if (rectsOverlap(interact, dialog)) {
+            queueDialog(dialog.title, dialog.text);
+          }
+        });
+      }
+    }
+    function tick(timestamp) {
+      if (!game.lastTick) game.lastTick = timestamp;
+      const dt = Math.min(0.032, (timestamp - game.lastTick) / 1000);
+      game.lastTick = timestamp;
+
+      if (!game.paused && !game.dialogActive && !game.quizActive && game.scene !== "Title") {
+        update(dt);
+      }
+      updateMusic();
+      render();
+      setHUD();
+      requestAnimationFrame(tick);
+    }
+
+    async function init() {
+      await preloadArt();
+      if (shouldEnableTouchControls()) {
+        touchControls.style.display = "block";
+      }
+      overlays.title.style.display = "grid";
+      try {
+        overlays.continue.disabled = !localStorage.getItem("magiwolf-save");
+      } catch (error) {
+        overlays.continue.disabled = true;
+      }
+      overlays.start.addEventListener("click", () => {
+        ensureMusic();
+        if (MUSIC.ctx && MUSIC.ctx.state === "suspended") {
+          MUSIC.ctx.resume().catch(() => {});
+        }
+        overlays.title.style.display = "none";
+        resetGame();
+        setHUD();
+        saveGame();
+      });
+      overlays.continue.addEventListener("click", () => {
+        ensureMusic();
+        if (MUSIC.ctx && MUSIC.ctx.state === "suspended") {
+          MUSIC.ctx.resume().catch(() => {});
+        }
+        if (loadGame()) {
+          overlays.title.style.display = "none";
+          setHUD();
+        }
+      });
+      overlays.restart.addEventListener("click", () => {
+        ensureMusic();
+        overlays.victory.style.display = "none";
+        resetGame();
+        setHUD();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.repeat) return;
+        const key = event.key;
+        updateCheatBuffer(key);
+        if (KEYMAP[key]) INPUT[KEYMAP[key]] = true;
+        if (key === " " || key === "Spacebar") {
+          if (game.player) game.player.jumpBuffer = 0.12;
+        }
+        if ((key === "p" || key === "P") && event.shiftKey) {
+          game.paused = !game.paused;
+          overlays.pause.style.display = game.paused ? "grid" : "none";
+        }
+        if (key === "e" || key === "E") {
+          if (game.dialogActive) {
+            nextDialog();
+          } else if (!game.quizActive && game.scene !== "Title") {
+            handleInteraction();
+          }
+        }
+        if (game.quizActive && key === "Enter") {
+          submitQuizGuess();
+        }
+        if (game.quizActive && (key === "r" || key === "R") && !(game.quizRound && game.quizRound.disableAudio)) {
+          if (game.quizRound && !speakSpellingRound(game.quizRound)) {
+            setQuizHint("Audio is unavailable here. Keep using the sentence and hints.");
+          }
+        }
+      });
+
+      document.addEventListener("keyup", (event) => {
+        const key = event.key;
+        if (KEYMAP[key]) INPUT[KEYMAP[key]] = false;
+      });
+
+      overlays.dialog.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        if (game.dialogActive) {
+          nextDialog();
+        }
+      });
+      overlays.dialog.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        if (game.dialogActive) {
+          nextDialog();
+        }
+      }, { passive: false });
+      overlays.quizHear.addEventListener("click", () => {
+        if (game.quizRound && game.quizRound.disableAudio) {
+          return;
+        }
+        if (game.quizRound && !speakSpellingRound(game.quizRound)) {
+          setQuizHint("Audio is unavailable here. Keep using the sentence and hints.");
+        }
+      });
+      overlays.quizSubmit.addEventListener("click", () => {
+        submitQuizGuess();
+      });
+      overlays.quizInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitQuizGuess();
+        }
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (game.dialogActive && !game.quizActive) {
+          nextDialog();
+        }
+      });
+
+      setupTouchControls();
+
+      requestAnimationFrame(tick);
+    }
+
+    function beginBossSpellingRound() {
+      const scene = getScene();
+      if (!scene.boss) return;
+      if (!game.bossState.wordQueue || game.bossState.wordQueue.length === 0) {
+        game.bossState.wordQueue = shuffle(createGateQuiz("boss"));
+      }
+      const round = game.bossState.wordQueue[0];
+      if (!round) {
+        game.bossState.defeated = true;
+        game.bossState.active = false;
+        game.bossState.hp = 0;
+        closeQuiz();
+        spawnFx({ x: scene.boss.body.x + 110, y: scene.boss.body.y + 90, color: "#ffe08a", count: 28, spread: 2.2, life: 1.1 });
+        queueDialog("Boss Defeated", "Stormshell Rex crashes down. The victory gate is open.");
+        saveGame();
+        return;
+      }
+      showQuiz(round, `Boss Spell ${game.bossState.roundIndex + 1}`, guess => {
+        const answer = normalizeAnswer(guess);
+        if (!answer) {
+          setQuizHint("Type the spelling before you cast.");
+          return;
+        }
+        if (answer === round.word) {
+          game.bossState.wordQueue.shift();
+          game.bossState.roundIndex += 1;
+          game.bossState.hp = Math.max(0, game.bossState.hp - 1);
+          game.bossState.hitFlash = 0.9;
+          closeQuiz();
+          spawnFx({ x: scene.boss.body.x + 90, y: scene.boss.body.y + 30, color: "#d7a4ff", count: 22, spread: 1.8, life: 0.95 });
+          queueDialog("Spell Hit", `${round.answerLabel || round.word} was correct. The wand blast hurts Stormshell Rex.`);
+          if (game.bossState.hp <= 0) {
+            game.bossState.defeated = true;
+            game.bossState.active = false;
+            queueDialog("Boss Defeated", "Stormshell Rex crashes down. The victory gate is open.");
+            saveGame();
+            return;
+          }
+          saveGame();
+          window.setTimeout(() => {
+            if (game.scene === "Boss Arena" && !game.quizActive && !game.dialogActive && !game.bossState.defeated) {
+              beginBossSpellingRound();
+            }
+          }, 350);
+          return;
+        }
+
+        game.bossState.wordQueue.shift();
+        game.bossState.wordQueue.push({
+          word: round.word,
+          answerLabel: round.answerLabel,
+          definition: round.definition,
+          sentence: round.sentence,
+          displaySentence: round.displaySentence,
+          hints: round.hints.slice(),
+          attempts: 0
+        });
+        game.bossState.mistakes += 1;
+        game.bossState.cooldown = 1.35;
+        game.bossState.nextAttack = 0.18;
+        closeQuiz();
+        spawnFx({ x: scene.boss.body.x + 120, y: scene.boss.body.y + 180, color: "#ff954f", count: 18, spread: 1.9, life: 0.8 });
+        spawnFx({ x: scene.boss.body.x + 100, y: scene.boss.body.y + 170, color: "#8fd4ff", count: 12, spread: 1.4, life: 0.8 });
+        takeDamage(scene.boss.body.x + 110);
+        if (game.bossState.mistakes >= 2) {
+          game.hearts = game.maxHearts;
+          queueDialog("Boss Wins", "Two spelling misses. Restarting the boss battle.");
+          resetBossBattle();
+          respawn();
+          saveGame();
+          return;
+        }
+        queueDialog("Boss Attack", `Stormshell Rex blasts fire and lightning. Misses: ${game.bossState.mistakes}/2.`);
+        saveGame();
+        window.setTimeout(() => {
+          if (game.scene === "Boss Arena" && !game.quizActive && !game.dialogActive && !game.bossState.defeated) {
+            beginBossSpellingRound();
+          }
+        }, 350);
+      });
+    }
+
+    init();
+
+    function supportsTouch() {
+      return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || window.matchMedia("(pointer: coarse)").matches;
+    }
+
+    function shouldEnableTouchControls() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("touch") === "1") return true;
+      return supportsTouch();
+    }
+
+    function setupTouchControls() {
+      if (!touchControls) return;
+      const buttons = touchControls.querySelectorAll(".touch-btn");
+      const activeButtons = new Map();
+      const setInput = (action, isDown) => {
+        if (action === "jump" && isDown && game.player) {
+          game.player.jumpBuffer = 0.12;
+          vibrate(20);
+          return;
+        }
+        if (action === "interact" && isDown) {
+          if (game.dialogActive) {
+            nextDialog();
+          } else if (!game.quizActive && game.scene !== "Title") {
+            handleInteraction();
+          }
+          vibrate(25);
+          return;
+        }
+        if (action === "pause" && isDown) {
+          game.paused = !game.paused;
+          overlays.pause.style.display = game.paused ? "grid" : "none";
+          vibrate(15);
+        }
+      };
+      buttons.forEach(button => {
+        const action = button.dataset.action;
+        const onDown = (event) => {
+          event.preventDefault();
+          activeButtons.set(event.pointerId || action, action);
+          setInput(action, true);
+        };
+        const onUp = (event) => {
+          event.preventDefault();
+          activeButtons.delete(event.pointerId || action);
+          setInput(action, false);
+        };
+        button.addEventListener("pointerdown", onDown);
+        button.addEventListener("pointerup", onUp);
+        button.addEventListener("pointercancel", onUp);
+        button.addEventListener("pointerleave", onUp);
+        button.addEventListener("touchstart", onDown, { passive: false });
+        button.addEventListener("touchend", onUp, { passive: false });
+      });
+
+      setupJoystick();
+    }
+
+    function setupJoystick() {
+      if (!joystick || !joystickKnob) return;
+      let activeId = null;
+      const maxRadius = () => joystick.clientWidth * 0.35;
+      const centerFromEvent = (event) => {
+        const rect = joystick.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, rect };
+      };
+      const updateStick = (clientX, clientY) => {
+        const { x, y, rect } = centerFromEvent();
+        const dx = clientX - x;
+        const dy = clientY - y;
+        const radius = maxRadius();
+        const dist = Math.hypot(dx, dy);
+        const ratio = dist > radius ? radius / dist : 1;
+        const stickX = dx * ratio;
+        const stickY = dy * ratio;
+        joystickKnob.style.transform = `translate(${stickX}px, ${stickY}px)`;
+        const axis = clamp(stickX / radius, -1, 1);
+        game.touchAxisX = axis;
+      };
+      const resetStick = () => {
+        activeId = null;
+        joystickKnob.style.transform = "translate(0, 0)";
+        game.touchAxisX = 0;
+      };
+      joystick.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        activeId = event.pointerId;
+        updateStick(event.clientX, event.clientY);
+        vibrate(10);
+      });
+      window.addEventListener("pointermove", (event) => {
+        if (activeId === null || event.pointerId !== activeId) return;
+        updateStick(event.clientX, event.clientY);
+      });
+      window.addEventListener("pointerup", (event) => {
+        if (event.pointerId !== activeId) return;
+        resetStick();
+        vibrate(8);
+      });
+      window.addEventListener("pointercancel", (event) => {
+        if (event.pointerId !== activeId) return;
+        resetStick();
+      });
+    }
+
+    function vibrate(duration) {
+      if (navigator.vibrate) {
+        navigator.vibrate(duration);
+      }
+    }
+  </script>
+</body>
+</html>
+
